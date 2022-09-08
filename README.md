@@ -4,9 +4,9 @@ Repoistory to host all of Fuel's reusable workflows
 
 ## Group of Actions
 
-| Group | Description |
-|-|-|
-|[gh-projects](./gh-projects/)| Automating interactions between GH Projects and repositories |
+| Group                         | Description                                                  |
+| ----------------------------- | ------------------------------------------------------------ |
+| [gh-projects](./gh-projects/) | Automating interactions between GH Projects and repositories |
 
 ## License
 

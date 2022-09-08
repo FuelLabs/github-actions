@@ -3,25 +3,25 @@ description: Assign issues or pull requests to a project with custom fields.
 
 inputs:
   app_id:
-    description: 'GitHub App App Id'
+    description: "GitHub App App Id"
     required: true
   private_key:
-    description: 'GitHub APP Private Key'
+    description: "GitHub APP Private Key"
     required: true
   organization:
-    default: 'FuelLabs'
-    description: 'Github Organization'
+    default: "FuelLabs"
+    description: "Github Organization"
     required: true
   project_number:
-    description: 'Github Project number `.../projects/1`'
+    description: "Github Project number `.../projects/1`"
   object_id:
-    description: 'Object id, correspond to the issue or pull request node id'
+    description: "Object id, correspond to the issue or pull request node id"
   fields:
-    description: 'List of fields to set when assign'
-    default: ''
+    description: "List of fields to set when assign"
+    default: ""
   values:
-    description: 'List of values matching the field order'
-    default: ''
+    description: "List of values matching the field order"
+    default: ""
 
 runs:
   using: "composite"
