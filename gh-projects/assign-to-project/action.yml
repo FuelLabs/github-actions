@@ -1,0 +1,56 @@
+name: Assign to project
+description: Assign issues or pull requests to a project with custom fields.
+
+inputs:
+  app_id:
+    description: 'GitHub App App Id'
+    required: true
+  private_key:
+    description: 'GitHub APP Private Key'
+    required: true
+  organization:
+    default: 'FuelLabs'
+    description: 'Github Organization'
+    required: true
+  project_number:
+    description: 'Github Project number `.../projects/1`'
+  object_id:
+    description: 'Object id, correspond to the issue or pull request node id'
+  fields:
+    description: 'List of fields to set when assign'
+    default: ''
+  values:
+    description: 'List of values matching the field order'
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup check
+      uses: actions/checkout@v3
+
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - name: Generate token
+      id: generate_token
+      uses: tibdex/github-app-token@v1.6.0
+      with:
+        app_id: ${{ inputs.app_id }}
+        private_key: ${{ inputs.private_key }}
+
+    - name: Assign to Project
+      shell: bash
+      env:
+        TOKEN: ${{ steps.generate_token.outputs.token }}
+        ORGANIZATION: ${{ inputs.organization }}
+        PROJECT_NUMBER: ${{ inputs.project_number }}
+        OBJECT_ID: ${{ inputs.object_id }}
+        PROJECT_FIELDS: ${{ inputs.fields }}
+        PROJECT_VALUES: ${{ inputs.values }}
+      run: |
+        cd ${{ github.action_path }}
+        npm install 
+        npm run assign-project

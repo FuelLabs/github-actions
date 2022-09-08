@@ -1,0 +1,18 @@
+{
+  "name": "assign-project-action",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "assign-project": "ts-node ./src/actions/assignProject.ts"
+  },
+  "author": "Fuel Labs <contact@fuel.sh> (https://fuel.network/)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@octokit/graphql": "^5.0.1",
+    "@octokit/graphql-schema": "^12.1.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "@types/node": "^18.7.15"
+  }
+}
