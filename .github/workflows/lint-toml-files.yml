@@ -1,10 +1,10 @@
-name: Lint TOML Files
+name: Lint Cargo.toml Files
 
 on:
   workflow_call:
 
 jobs:
-  lint-TOML:
+  cargo-toml-lint:
     runs-on: ubuntu-latest
 
     steps:
