@@ -18,6 +18,7 @@ jobs:
       - name: Install toolchain
       - uses: actions-rs/toolchain@v1
         with:
+          override: true
           toolchain: stable
 
       - name: Publish crate
