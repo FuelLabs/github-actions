@@ -36,7 +36,7 @@ env:
   GITHUB_CONTAINNER_REGISTRY_URL: ghcr.io
 
 jobs:
-  publish-crate:
+  build-and-publish-docker-image:
     runs-on: ubuntu-latest
 
     permissions:
