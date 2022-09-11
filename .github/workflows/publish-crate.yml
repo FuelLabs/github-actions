@@ -1,0 +1,27 @@
+name: Publish Crate
+
+on:
+  workflow_call:
+    secrets:
+      CARGO_REGISTRY_TOKEN:
+        description: "Token for publishing to the crates.io registry"
+        required: true
+
+jobs:
+  publish-crate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install toolchain
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Publish crate
+        uses: katyo/publish-crates@v1
+        with:
+          publish-delay: 30000
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
