@@ -1,11 +1,8 @@
-import { graphql } from "@octokit/graphql";
-import { ProjectV2 } from "@octokit/graphql-schema";
-import { headers } from "../utils";
+import { graphql } from '@octokit/graphql';
+import { ProjectV2 } from '@octokit/graphql-schema';
+import { headers } from '~/utils';
 
-export async function getProject(
-  organization: string,
-  projectNumber: string | number
-) {
+export async function getProject(organization: string, projectNumber: string | number) {
   const {
     organization: { projectV2: project },
   } = await graphql<{
@@ -43,7 +40,7 @@ export async function getProject(
     {
       organization,
       projectNumber: Number(projectNumber),
-      headers,
+      headers: headers(),
     }
   );
   return project;

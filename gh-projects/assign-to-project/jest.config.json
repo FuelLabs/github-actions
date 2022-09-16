@@ -1,0 +1,15 @@
+{
+  "clearMocks": true,
+  "moduleFileExtensions": ["js", "ts"],
+  "testEnvironment": "node",
+  "setupFilesAfterEnv": ["./src/tests/setup.ts"],
+  "testMatch": ["**/*.test.ts"],
+  "testRunner": "jest-circus/runner",
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "~/(.*)": "<rootDir>/src/$1"
+  },
+  "verbose": true
+}

@@ -1,9 +1,6 @@
-import { graphql } from "@octokit/graphql";
-import {
-  AddProjectV2ItemByIdPayload,
-  ProjectV2,
-} from "@octokit/graphql-schema";
-import { headers } from "../utils";
+import { graphql } from '@octokit/graphql';
+import { AddProjectV2ItemByIdPayload } from '@octokit/graphql-schema';
+import { headers } from '~/utils';
 
 export async function assignProject(projectId: string, contentId: string) {
   const { addProjectV2ItemById } = await graphql<{
@@ -11,9 +8,7 @@ export async function assignProject(projectId: string, contentId: string) {
   }>(
     `
       mutation ($projectId: ID!, $contentId: ID!) {
-        addProjectV2ItemById(
-          input: { projectId: $projectId, contentId: $contentId }
-        ) {
+        addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
           item {
             id
           }
@@ -23,7 +18,7 @@ export async function assignProject(projectId: string, contentId: string) {
     {
       projectId,
       contentId,
-      headers,
+      headers: headers(),
     }
   );
   return addProjectV2ItemById.item!.id;
