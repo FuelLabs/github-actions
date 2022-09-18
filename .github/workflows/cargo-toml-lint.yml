@@ -24,3 +24,11 @@ jobs:
 
       - name: Run Cargo.toml Linter
         run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+
+      - name: Notify if Job Fails
+        uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
+        with:
+          status: ${{ job.status }}
+        secrets:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

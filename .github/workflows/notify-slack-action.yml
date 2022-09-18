@@ -1,0 +1,43 @@
+name: Notify Slack Action
+
+on:
+  workflow_call:
+    inputs:
+      status:
+        description: "The status of the job"
+        required: true
+        type: string
+
+    secrets:
+      GITHUB_TOKEN:
+        description: "GitHub token"
+        required: true
+      SLACK_WEBHOOK_URL:
+        description: "Slack Webhook URL"
+        required: true
+
+jobs:
+  notify-slack-action:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install toolchain
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install Slack Notification Action
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ inputs.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notification_title: "{workflow} has {status_message}"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}> : <{run_url}|View Run Results>"
+          footer: ""
+          notify_when: "failure"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
