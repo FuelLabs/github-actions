@@ -8,7 +8,7 @@ on:
         required: false
         type: string
 
-      deployment_file:
+      docker_file:
         description: "Path to the deployment file"
         required: false
         type: string
@@ -76,7 +76,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ${{ inputs.deployment_file }}
+          file: ${{ inputs.docker_file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
