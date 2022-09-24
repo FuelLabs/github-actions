@@ -28,8 +28,8 @@ jobs:
           version: 0.1
 
       - name: Run Cargo.toml Linter
-        # run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
-        run: exit 1
+        run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+        # run: exit 1
 
   # notify-if-failure:
   #   needs: cargo-toml-lint
