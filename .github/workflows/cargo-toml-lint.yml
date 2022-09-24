@@ -3,7 +3,7 @@ name: Lint Cargo.toml Files
 on:
   workflow_call:
     secrets:
-      GITHUB_TOKEN:
+      TOKEN:
         required: true
       SLACK_WEBHOOK_URL:
         required: true
@@ -36,5 +36,5 @@ jobs:
   #   if: ${{ needs.cargo-toml-lint.result == 'failure' }}
   #   uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@a10550a87123640ab30dd6533705dde394bc90e9
   #   secrets:
-  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     TOKEN: ${{ secrets.TOKEN }}
   #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
