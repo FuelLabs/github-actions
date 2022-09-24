@@ -2,6 +2,11 @@ name: Lint Cargo.toml Files
 
 on:
   workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
 
 jobs:
   cargo-toml-lint:
