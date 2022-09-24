@@ -31,10 +31,10 @@ jobs:
         # run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
         run: exit 1
 
-  notify-if-failure:
-    needs: cargo-toml-lint
-    if: ${{ needs.cargo-toml-lint.result == 'failure' }}
-    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@a10550a87123640ab30dd6533705dde394bc90e9
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  # notify-if-failure:
+  #   needs: cargo-toml-lint
+  #   if: ${{ needs.cargo-toml-lint.result == 'failure' }}
+  #   uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@a10550a87123640ab30dd6533705dde394bc90e9
+  #   secrets:
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
