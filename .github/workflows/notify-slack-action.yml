@@ -2,12 +2,6 @@ name: Notify Slack Action
 
 on:
   workflow_call:
-    inputs:
-      status:
-        description: "The status of the job"
-        required: true
-        type: string
-
     secrets:
       GITHUB_TOKEN:
         description: "GitHub token"
@@ -33,7 +27,7 @@ jobs:
         uses: ravsamhq/notify-slack-action@v2
         if: always()
         with:
-          status: ${{ inputs.status }}
+          status: "failure"
           token: ${{ secrets.GITHUB_TOKEN }}
           notification_title: "{workflow} has {status_message}"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}> : <{run_url}|View Run Results>"
