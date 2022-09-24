@@ -16,20 +16,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install toolchain
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+    #   - name: Install toolchain
+    #   - uses: actions-rs/toolchain@v1
+    #     with:
+    #       toolchain: stable
 
-      - name: Install Cargo.toml Linter
-        uses: baptiste0928/cargo-install@v1
-        with:
-          crate: cargo-toml-lint
-          version: 0.1
+    #   - name: Install Cargo.toml Linter
+    #     uses: baptiste0928/cargo-install@v1
+    #     with:
+    #       crate: cargo-toml-lint
+    #       version: 0.1
 
-      # - name: Run Cargo.toml Linter
-      #   run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
-      #   # run: exit 1
+    # - name: Run Cargo.toml Linter
+    #   run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+    #   # run: exit 1
 
   # notify-if-failure:
   #   needs: cargo-toml-lint
