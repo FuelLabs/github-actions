@@ -1,21 +1,15 @@
-name: Reusable workflow example
+name: Reusable workflow
 
 on:
   workflow_call:
-    inputs:
-      username:
-        required: true
-        type: string
-    secrets:
-      token:
-        required: true
 
 jobs:
-  example_job:
-    name: Pass input and secrets to my-action
+  cargo-toml-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: octo-org/my-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/cargo@v1
         with:
-          username: ${{ inputs.username }}
-          token: ${{ secrets.token }}
+          command: install
+          args: cargo-toml-lint
+      - run: cargo toml-lint
