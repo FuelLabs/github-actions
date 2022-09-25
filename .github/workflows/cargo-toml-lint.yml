@@ -8,5 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-toml-lint
+      - uses: actions-rs/cargo@v1
+        with:
+          command: toml-lint
+          args: --all
