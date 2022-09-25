@@ -1,7 +1,6 @@
 name: Lint Cargo.toml Files
 
 on:
-  workflow_dispatch:
   workflow_call:
 
 jobs:
