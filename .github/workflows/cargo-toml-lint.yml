@@ -8,12 +8,4 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-toml-lint
-      - uses: actions-rs/cargo@v1
-        with:
-          command: toml-lint
-          args: --all
+      - run: echo "Hello"
