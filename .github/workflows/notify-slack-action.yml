@@ -3,8 +3,8 @@ name: Notify Slack Action
 on:
   workflow_call:
     secrets:
-      TOKEN:
-        description: "GitHub token"
+      GH_TOKEN:
+        description: "GitHub Token"
         required: true
       SLACK_WEBHOOK_URL:
         description: "Slack Webhook URL"
@@ -28,7 +28,7 @@ jobs:
         if: always()
         with:
           status: "failure"
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           notification_title: "{workflow} has {status_message}"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}> : <{run_url}|View Run Results>"
           footer: ""
