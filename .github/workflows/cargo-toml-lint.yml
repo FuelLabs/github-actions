@@ -1,54 +1,21 @@
-name: Create and Publish Docker Image
+name: Reusable workflow example
 
 on:
   workflow_call:
     inputs:
-      image_name:
+      username:
         required: true
-        type: string
-      tag: 
         type: string
     secrets:
-      registry_username:
-        required: true
-      registry_password:
+      token:
         required: true
 
 jobs:
-  build:
+  example_job:
+    name: Pass input and secrets to my-action
     runs-on: ubuntu-latest
-
-    steps:      
-      - uses: actions/checkout@v2
-      
-      - name: Setup BuildX
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to the Registry
-        uses: docker/login-action@v1
-        with:
-          username: ${{secrets.registry_username}}
-          password: ${{secrets.registry_password}}
-      
-      - name: Set the tag
-        run: |
-          if [ -z "${{inputs.tag}}" ]
-          then
-            echo "final_tag=latest" >> $GITHUB_ENV
-          else
-            echo "final_tag=${{inputs.tag}}" >> $GITHUB_ENV
-          fi
-      
-      - name: Build and Push the Image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: ${{secrets.registry_username}}/${{inputs.image_name}}:${{env.final_tag}}
-          
-          
-  do-something-else:
-    runs-on: ubuntu-latest
-
     steps:
-    - run: echo "Hello"
+      - uses: octo-org/my-action@v1
+        with:
+          username: ${{ inputs.username }}
+          token: ${{ secrets.token }}
