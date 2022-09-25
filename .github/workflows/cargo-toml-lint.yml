@@ -35,19 +35,7 @@ jobs:
         run: exit 1
 
   notify-slack-action:
-    needs: cargo-toml-lint
-    runs-on: ubuntu-latest
-    if: always() && needs.cargo-toml-lint.result == 'failure'
-
-    steps:
-      - name: Install Slack Notification Action
-        uses: ravsamhq/notify-slack-action@v2
-        with:
-          status: "failure"
-          token: ${{ secrets.GH_TOKEN }}
-          notification_title: "{workflow} has {status_message}"
-          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}> : <{run_url}|View Run Results>"
-          footer: ""
-          notify_when: "failure"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@elliot/notify-slack-action
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
