@@ -4,12 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  cargo-toml-lint:
+  hello-world-job:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-toml-lint
-      - run: cargo toml-lint
+      - run: echo "Hello World!"
