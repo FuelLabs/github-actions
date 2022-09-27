@@ -30,7 +30,9 @@ jobs:
           version: 0.1
 
       - name: Run Cargo.toml Linter
-        run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+        # run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+        # failure test
+        run: exit 1
 
   notify-slack-action:
     uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@elliot/notify-slack-action
