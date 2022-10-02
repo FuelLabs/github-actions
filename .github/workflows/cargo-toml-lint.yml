@@ -35,6 +35,8 @@ jobs:
         run: exit 1
 
   notify-slack-action:
+    needs: cargo-toml-lint
+    if: ${{ needs.cargo-toml-lint.result == 'failure' }}
     uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@elliot/notify-slack-action
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
