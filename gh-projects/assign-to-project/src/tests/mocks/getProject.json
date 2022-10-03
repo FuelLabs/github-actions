@@ -1,0 +1,81 @@
+{
+  "id": "PVT_0000",
+  "fields": {
+    "nodes": [
+      {
+        "id": "PVTF_OOOO",
+        "name": "Title",
+        "dataType": "TITLE"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Assignees",
+        "dataType": "ASSIGNEES"
+      },
+      {
+        "id": "PVTSSF_OOOO",
+        "name": "Status",
+        "dataType": "SINGLE_SELECT",
+        "options": [
+          {
+            "id": "f75ad846",
+            "name": "Todo"
+          },
+          {
+            "id": "47fc9ee4",
+            "name": "In Progress"
+          },
+          {
+            "id": "98236657",
+            "name": "Done"
+          }
+        ]
+      },
+      {
+        "id": "PVTSSF_OOOO",
+        "name": "Number field",
+        "dataType": "NUMBER"
+      },
+      {
+        "id": "PVTSSF_OOOO",
+        "name": "Text field",
+        "dataType": "TEXT"
+      },
+      {
+        "id": "PVTSSF_OOOO",
+        "name": "Date field",
+        "dataType": "DATE"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Labels",
+        "dataType": "LABELS"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Linked pull requests",
+        "dataType": "LINKED_PULL_REQUESTS"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Tracks",
+        "dataType": "TRACKS"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Reviewers",
+        "dataType": "REVIEWERS"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Repository",
+        "dataType": "REPOSITORY"
+      },
+      {
+        "id": "PVTF_OOOO",
+        "name": "Milestone",
+        "dataType": "MILESTONE"
+      }
+    ]
+  }
+}
