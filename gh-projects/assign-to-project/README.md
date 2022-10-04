@@ -12,15 +12,25 @@ https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating
 ### How to use?
 
 ```yml
-- uses: FuelLabs/github-actions/gh-projects/assign-to-project@master
-  with:
-    app_id: ${{ secrets.COMPANY_GITHUB_APP_ID }}
-    private_key: ${{ secrets.COMPANY_GITHUB_APP_PEM }}
-    organization: FuelLabs
-    project_number: 1
-    object_id: ${{ github.event.issue.node_id }}
-    fields: "date, text, number, status"
-    values: "2022-09-10T00:02:11.820Z, My custom text 2, 4, In Progress"
+name: "Assign project to issue"
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  assign-project:
+    name: Assign project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: FuelLabs/github-actions/gh-projects/assign-to-project@master
+        with:
+          token: ${{ secrets.PROJECTS_TOKEN }}
+          organization: FuelLabs
+          project_number: 17
+          object_id: ${{ github.event.issue.node_id }}
+          fields: "Project, Status"
+          values: "🟦 TypeScript, 🔍 Triage"
 ```
 
 ### Inputs
