@@ -1,0 +1,54 @@
+name: "CI assign project"
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, closed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assign-project-changed:
+    name: Assign project changed
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changed-assign-project.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Change assign project
+        id: changed-assign-project
+        uses: tj-actions/changed-files@v22.2
+        with:
+          files: |
+            **/gh-projects/assign-to-project/**/*
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    # Avoid running this if no files under assign-to-project was changed
+    needs: assign-project-changed
+    if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/setup-node
+      - run: |
+          npm install
+          npm run lint
+        working-directory: ./gh-projects/assign-to-project
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    # Avoid running this if no files under assign-to-project was changed
+    needs: assign-project-changed
+    if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/setup-node
+
+      - name: Run tests
+        run: |
+          npm install
+          npm run test
+        working-directory: ./gh-projects/assign-to-project

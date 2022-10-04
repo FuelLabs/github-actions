@@ -1,0 +1,26 @@
+name: Assign to project
+description: Assign issues or pull requests to a project with custom fields.
+author: "FuelLabs"
+
+runs:
+  using: "node16"
+  main: "dist/main.js"
+
+inputs:
+  token:
+    description: "GitHub PAT token"
+    required: true
+  organization:
+    default: "FuelLabs"
+    description: "Github Organization"
+    required: true
+  project_number:
+    description: "Github Project number `.../projects/1`"
+  object_id:
+    description: "Object id, correspond to the issue or pull request node id"
+  fields:
+    description: "List of fields to set when assign"
+    default: ""
+  values:
+    description: "List of values matching the field order"
+    default: ""
