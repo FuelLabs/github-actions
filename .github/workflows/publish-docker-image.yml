@@ -94,7 +94,7 @@ jobs:
   notify-slack-action:
     needs: cargo-toml-lint
     if: ${{failure()}}
-    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@elliot/notify-slack-action
+    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
