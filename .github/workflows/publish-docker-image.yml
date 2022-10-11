@@ -30,12 +30,20 @@ on:
         type: string
 
     secrets:
+      GH_TOKEN:
+        description: "GitHub Token"
+        required: true
+
       GITHUB_CONTAINER_USERNAME:
         description: "Username for GitHub Container Registry"
         required: true
 
       GITHUB_CONTAINER_PASSWORD:
         description: "Password for GitHub Container Registry"
+        required: true
+
+      SLACK_WEBHOOK_URL:
+        description: "Slack Webhook URL"
         required: true
 
 env:
@@ -82,3 +90,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  notify-slack-action:
+    needs: cargo-toml-lint
+    if: ${{failure()}}
+    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
