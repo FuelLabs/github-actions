@@ -92,7 +92,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   notify-slack-action:
-    needs: cargo-toml-lint
+    needs: build-and-publish-docker-image
     if: ${{failure()}}
     uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
     secrets:

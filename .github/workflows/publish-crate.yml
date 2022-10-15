@@ -46,7 +46,7 @@ jobs:
           registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   notify-slack-action:
-    needs: cargo-toml-lint
+    needs: publish-crate
     if: ${{failure()}}
     uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
     secrets:
