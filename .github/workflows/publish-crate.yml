@@ -27,6 +27,18 @@ jobs:
           override: true
           toolchain: stable
 
+      - name: Verify Tag
+        run: |
+          curl -sSLf "https://github.com/TomWright/dasel/releases/download/v1.24.3/dasel_linux_amd64" -L -o dasel && chmod +x dasel
+          mv ./dasel /usr/local/bin/dasel
+
+          cargo_files=($(find . -name "Cargo.toml" -not -path "./Cargo.toml" -exec grep -L -E "publish\s*=\s*false" {} \; | sed 's/^\.\///'))
+
+          for file in "${cargo_files[@]}"
+          do
+            ./.github/workflows/scripts/verify_tag.sh ${{ github.ref_name }} "$file"
+          done
+
       - name: Publish crate
         uses: katyo/publish-crates@v1
         with:
