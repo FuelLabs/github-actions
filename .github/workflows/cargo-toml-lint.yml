@@ -2,6 +2,13 @@ name: Lint Cargo.toml Files
 
 on:
   workflow_call:
+    secrets:
+      GH_TOKEN:
+        description: "GitHub Token"
+        required: true
+      SLACK_WEBHOOK_URL:
+        description: "Slack Webhook URL"
+        required: true
 
 jobs:
   cargo-toml-lint:
@@ -12,7 +19,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install toolchain
-      - uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
@@ -24,3 +31,11 @@ jobs:
 
       - name: Run Cargo.toml Linter
         run: git ls-files | grep Cargo.toml$ | xargs --verbose -n 1 cargo-toml-lint
+
+  notify-slack-action:
+    needs: cargo-toml-lint
+    if: ${{failure()}}
+    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
