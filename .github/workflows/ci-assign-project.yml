@@ -31,7 +31,7 @@ jobs:
     if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/setup-node
+      - uses: ./setups/node
       - run: |
           npm install
           npm run lint
@@ -45,7 +45,7 @@ jobs:
     if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/setup-node
+      - uses: ./setups/node
 
       - name: Run tests
         run: |

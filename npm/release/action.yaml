@@ -1,0 +1,73 @@
+name: "Release packages to NPM"
+
+inputs:
+  build:
+    default: "pnpm build"
+    description: "Project build command"
+    required: true
+  publish:
+    default: "pnpm changeset:release"
+    description: "Project publish command"
+    required: true
+  release-type:
+    default: "aggregate"
+    description: "Changeset release type"
+    required: true
+  version:
+    description: "Project version"
+    required: true
+  github-token:
+    description: "GitHub screct token"
+    required: true
+  github-actor:
+    description: "GitHub actor name"
+    required: true
+  npm-token:
+    description: "NPM screct token"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        # need this to get full git-history/clone in order to build changelogs and check changesets
+        fetch-depth: 0
+
+    - name: Setup Node and NPM
+      uses: ./setups/node
+      uses: ./setups/npm
+      with:
+        npm-token: ${{ inputs.npm-token }}
+
+    - name: Setup git user (for changelog step)
+      run: |
+        git config --global user.name "${{ inputs.github-actor }}"
+        git config --global user.email "${{ inputs.github-actor }}@users.noreply.github.com"
+
+    - name: Build project
+      run: ${{ inputs.build }}
+
+    - name: Create Release Pull Request or Publish to NPM
+      id: changesets
+      uses: FuelLabs/changesets-action@main
+      with:
+        publish: ${{ inputs.publish }}
+        commit: "ci(changesets): versioning packages"
+        title: "ci(changesets): versioning packages"
+        createGithubReleases: ${{ inputs.release-type }}
+        githubReleaseName: v${{ inputs.version }}
+        githubTagName: v${{ inputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        NPM_TOKEN: ${{ inputs.npm-token }}
+
+    - name: Release to @next tag
+      if: steps.changesets.outputs.published != 'true'
+      run: |
+        git checkout master
+        pnpm changeset version --snapshot next
+        pnpm changeset publish --tag next
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
