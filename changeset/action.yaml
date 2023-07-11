@@ -17,13 +17,13 @@ inputs:
     description: "Project version"
     required: true
   github-token:
-    description: "GitHub screct token"
+    description: "GitHub secret token"
     required: true
   github-actor:
     description: "GitHub actor name"
     required: true
   npm-token:
-    description: "NPM screct token"
+    description: "NPM secret token"
     required: true
 
 runs:
@@ -69,5 +69,5 @@ runs:
         pnpm changeset version --snapshot next
         pnpm changeset publish --tag next
       env:
-        NPM_TOKEN: ${{ inputs.npm-token }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        NPM_TOKEN: ${{ inputs.npm-token }}

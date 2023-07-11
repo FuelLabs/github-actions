@@ -4,6 +4,9 @@ inputs:
   compose-version:
     description: 'Docker Dompose version'
     default: 2.6.0
+  username:
+    description: 'Username for https://ghcr.io'
+    required: true
   password:
     description: 'Password for https://ghcr.io'
     required: true
@@ -15,7 +18,7 @@ runs:
       uses: docker/login-action@v2
       with:
         registry: ghcr.io
-        username: ${{ github.repository_owner }}
+        username: ${{ inputs.username }}
         password: ${{ inputs.password }}
 
     # Make github action to use the latest version of
