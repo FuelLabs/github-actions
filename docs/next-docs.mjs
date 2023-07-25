@@ -107,7 +107,7 @@ function checkFile(filepath) {
         const path = `${compJSON.folders[i]}/${
           comp.includes(".") ? comp.split(".").pop() : comp
         }`;
-        const thisRepo = path.resolve(process.cwd(), '../..');
+        const thisRepo = path.join(process.cwd(), '../..');
         const actualPath = `${thisRepo}${path}.tsx`;
         if (fs.existsSync(actualPath)) {
           actualCompPath = `..${path}`;
