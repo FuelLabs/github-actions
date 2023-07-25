@@ -1,7 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const { EOL } = require("os");
-const assert = require("assert");
+import path from "path";
+import fs from "fs";
+import { EOL } from "os";
+import assert from "assert";
 
 const srcFolderPath = path.join(process.cwd(), process.argv[0]);
 const subfolders = fs

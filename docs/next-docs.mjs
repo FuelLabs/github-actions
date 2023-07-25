@@ -109,9 +109,6 @@ function checkFile(filepath) {
           comp.includes(".") ? comp.split(".").pop() : comp
         }`;
         const actualPath = `${REPO_DIRECTORY}${path}.tsx`;
-        console.log("REPO_DIRECTORY", REPO_DIRECTORY)
-        console.log("path", path)
-        console.log("actualPath", actualPath)
         if (fs.existsSync(actualPath)) {
           actualCompPath = `..${path}`;
           break;
