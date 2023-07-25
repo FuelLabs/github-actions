@@ -16,6 +16,12 @@ const subfolders = files.filter((item) =>
 );
 
 function main(){
+  console.log("process.cwd()", process.cwd())
+  console.log("DOCS_DIRECTORY", DOCS_DIRECTORY)
+  console.log("SRC_PATH", SRC_PATH)
+  console.log("COMP_CONFIG_PATH", COMP_CONFIG_PATH)
+  console.log("NAV_PATH", NAV_PATH)
+  
   checkForNestedFolders();
   checkNavConfig();
   checkComponentsConfig();
