@@ -33,23 +33,24 @@ function checkForNestedFolders(){
           fs.statSync(path.join(DOCS_DIRECTORY, subfolder, item)).isDirectory()
         )
     );
-    assert.deepStrictEqual(nestedSubfolders.length, 0);
+    assert.deepStrictEqual(nestedSubfolders.length, 0, "cannot have nested subfolders");
 }
 
 function checkNavConfig(){
   const navFile = fs.readFileSync(NAV_PATH, "utf8");
   const navJSON = JSON.parse(navFile);
-  assert(Array.isArray(navJSON.menu));
+  assert(Array.isArray(navJSON.menu), "missing nav menu");
   subfolders.forEach((folder) => {
-    assert(Array.isArray(navJSON[folder.replaceAll("-", "_")]));
+    const folderName = folder.replaceAll("-", "_");
+    assert(Array.isArray(navJSON[folderName]), `missing nav ${folderName} menu`);
   });
 }
 
 function checkComponentsConfig(){
   const compFile = fs.readFileSync(COMP_CONFIG_PATH, "utf8");
   const compJSON = JSON.parse(compFile);
-  assert(Array.isArray(compJSON.folders));
-  assert(Array.isArray(compJSON.ignore));
+  assert(Array.isArray(compJSON.folders), "missing folders array in components.json config");
+  assert(Array.isArray(compJSON.ignore), "missing ignore array in components.json config");
 }
 
 function checkComponentNames(){
@@ -89,7 +90,7 @@ function checkComponentNesting(){
     const cleaned = Array.from(new Set(allComponents));
     cleaned.forEach((compName) => {
       const length = compName.split(".").length;
-      assert(length < 4);
+      assert(length < 4, `${compName} has too many nested components`);
     });
   });
 }
@@ -112,7 +113,7 @@ function checkFile(filepath) {
           break;
         }
       }
-      assert.notDeepStrictEqual(actualCompPath, "");
+      assert.notDeepStrictEqual(actualCompPath, "", `${comp} not found`);
     }
   });
 }

@@ -23,7 +23,7 @@ main();
 
 function checkForIndexFile() {
   const indexPath = path.join(srcFolderPath, "index.md");
-  assert(fs.existsSync(indexPath));
+  assert(fs.existsSync(indexPath), "missing index.md at root");
 }
 
 function checkForNestedFolders() {
@@ -34,13 +34,13 @@ function checkForNestedFolders() {
         fs.statSync(path.join(srcFolderPath, subfolder, item)).isDirectory()
       )
   );
-  assert.deepStrictEqual(nestedSubfolders.length, 0);
+  assert.deepStrictEqual(nestedSubfolders.length, 0, "cannot have nested subfolders");
 }
 function checkForNestedSummaryFolders() {
   const nestedSubfolders = splitSummary.filter((line) =>
     line.startsWith("    -")
   );
-  assert.deepStrictEqual(nestedSubfolders.length, 0);
+  assert.deepStrictEqual(nestedSubfolders.length, 0, "cannot nest subfolders in SUMMARY.md");
 }
 
 function checkForUnusedFiles() {
@@ -48,14 +48,14 @@ function checkForUnusedFiles() {
   fileNames.forEach((file) => {
     // check if each file can be found in the SUMMARY
     if (file !== "SUMMARY.md") {
-      assert(summaryContent.includes(file));
+      assert(summaryContent.includes(file), `${file} missing in SUMMARY.md`);
     }
   });
   subfolders.forEach((folder) => {
     const folderPath = path.join(srcFolderPath, folder);
     const subfolderNames = fs.readdirSync(folderPath);
     subfolderNames.forEach((subFile) => {
-      assert(summaryContent.includes(subFile));
+      assert(summaryContent.includes(subFile), `${subFile} missing in SUMMARY.md`);
     });
   });
 }
@@ -71,10 +71,10 @@ function checkSummaryFile() {
       menuOrder.forEach((item) => {
         let itemPath = path.join(srcFolderPath, item);
         if (fs.existsSync(itemPath)) {
-          assert(fs.statSync(itemPath).isDirectory());
+          assert(fs.statSync(itemPath).isDirectory(), `${itemPath} folder is missing`);
         } else {
           itemPath = `${itemPath}.md`;
-          assert(fs.existsSync(itemPath));
+          assert(fs.existsSync(itemPath), `${itemPath} file is missing`);
         }
       });
     } else {
@@ -90,7 +90,7 @@ function checkSummaryFile() {
             break;
           }
         }
-        assert(fileExists);
+        assert(fileExists, `${itemPath} doesn't exist`);
       });
     }
   });
