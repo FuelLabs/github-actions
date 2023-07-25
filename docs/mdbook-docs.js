@@ -90,7 +90,7 @@ function checkSummaryFile() {
             break;
           }
         }
-        assert(fileExists, `${itemPath} doesn't exist`);
+        assert(fileExists, `${item} doesn't exist`);
       });
     }
   });
