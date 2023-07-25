@@ -3,7 +3,7 @@ import fs from "fs";
 import { EOL } from "os";
 import assert from "assert";
 
-const srcFolderPath = path.join(process.cwd(), process.argv[0]);
+const srcFolderPath = path.join(process.cwd(), process.argv[2]);
 const subfolders = fs
   .readdirSync(srcFolderPath)
   .filter((item) => fs.statSync(path.join(srcFolderPath, item)).isDirectory());
