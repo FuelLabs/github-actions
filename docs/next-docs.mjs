@@ -6,8 +6,9 @@ import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 
-const DOCS_DIRECTORY = path.join(process.cwd(), `../../${process.argv[2]}`);
-const SRC_PATH = path.join(process.cwd(), `../../${process.argv[3]}`);
+const REPO_DIRECTORY = path.join(process.cwd(), "../..");
+const DOCS_DIRECTORY = path.join(REPO_DIRECTORY, process.argv[2]);
+const SRC_PATH = path.join(REPO_DIRECTORY, process.argv[3]);
 const COMP_CONFIG_PATH = path.join(SRC_PATH, "components.json");
 const NAV_PATH = path.join(SRC_PATH, "nav.json");
 const files = fs.readdirSync(DOCS_DIRECTORY);
@@ -107,8 +108,10 @@ function checkFile(filepath) {
         const path = `${compJSON.folders[i]}/${
           comp.includes(".") ? comp.split(".").pop() : comp
         }`;
-        const thisRepo = path.join(process.cwd(), '../..');
-        const actualPath = `${thisRepo}${path}.tsx`;
+        const actualPath = `${REPO_DIRECTORY}${path}.tsx`;
+        console.log("REPO_DIRECTORY", REPO_DIRECTORY)
+        console.log("path", path)
+        console.log("actualPath", actualPath)
         if (fs.existsSync(actualPath)) {
           actualCompPath = `..${path}`;
           break;
