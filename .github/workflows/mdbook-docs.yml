@@ -23,7 +23,7 @@ jobs:
           path: 'workflow'
       - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
         with:
-          config-file: 'workflow/docs/mlc.config.json'
+          config-file: 'workflow/docs/mlc.mdbook.json'
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
