@@ -16,8 +16,8 @@
   ],
   "replacementPatterns": [
     {
-      "pattern": "^/docs/(?!.*\\.mdx$)",
-      "replacement": "$&.mdx"
+      "pattern": "^/docs/(?!.*\\.mdx$)(.*)$",
+      "replacement": "/docs/$1.mdx"
     }
   ]
 }
