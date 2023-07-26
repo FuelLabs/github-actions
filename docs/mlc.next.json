@@ -13,16 +13,6 @@
       {
         "pattern": "\\.png$"
       }
-    ],
-    "replacementPatterns": [
-      {
-        "pattern": "^(?!http)(?!/).*",
-        "replacement": "$&.mdx"
-      },
-      {
-        "pattern": "^\\.\\.",
-        "replacement": "."
-      }
     ]
   }
   
