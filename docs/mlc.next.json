@@ -1,24 +1,27 @@
 {
-    "aliveStatusCodes": [200, 206, 405],
-    "ignorePatterns": [
-      {
-        "pattern": "^http://localhost:"
-      },
-      {
-        "pattern": "^@repository"
-      },
-      {
-        "pattern": "\\.zip$"
-      },
-      {
-        "pattern": "\\.png$"
-      }
-    ],
-    "replacementPatterns": [
-      {
-        "pattern": "^\\.\\.",
-        "replacement": "."
-      }
-    ]
-  }
-  
+  "aliveStatusCodes": [200, 206, 405],
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost:"
+    },
+    {
+      "pattern": "^@repository"
+    },
+    {
+      "pattern": "\\.zip$"
+    },
+    {
+      "pattern": "\\.png$"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^(?!\\.\\.).*",
+      "replacement": "$&.mdx"
+    },
+    {
+      "pattern": "^\\.\\.",
+      "replacement": "."
+    }
+  ]
+}
