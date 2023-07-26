@@ -13,5 +13,11 @@
     {
       "pattern": "\\.png$"
     }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/docs/",
+      "replacement": "$&.mdx"
+    }
   ]
 }
