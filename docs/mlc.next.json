@@ -5,6 +5,9 @@
       "pattern": "^http://localhost:"
     },
     {
+      "pattern": "^\\.\\."
+    },
+    {
       "pattern": "^@repository"
     },
     {
@@ -12,12 +15,6 @@
     },
     {
       "pattern": "\\.png$"
-    }
-  ],
-  "replacementPatterns": [
-    {
-      "pattern": "^/docs/(?!.*\\.mdx$)(.*)$",
-      "replacement": "/docs/$1.mdx"
     }
   ]
 }
