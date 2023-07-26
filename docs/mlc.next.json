@@ -16,12 +16,12 @@
   ],
   "replacementPatterns": [
     {
-      "pattern": "^(?!\\.\\.).*",
-      "replacement": "$&.mdx"
-    },
-    {
       "pattern": "^\\.\\.",
       "replacement": "."
+    },
+    {
+      "pattern": "^(?!http)(?!/)(?!\\.\\.).*",
+      "replacement": "$&.mdx"
     }
   ]
 }
