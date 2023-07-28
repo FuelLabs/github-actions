@@ -5,6 +5,9 @@
       "pattern": "^http://localhost:"
     },
     {
+      "pattern": "^http://127"
+    },
+    {
       "pattern": "^\\.\\."
     },
     {
