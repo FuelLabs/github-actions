@@ -1,4 +1,4 @@
-name: "Next Docs"
+name: "Docs Hub Check"
 
 on:
   workflow_call:
@@ -23,11 +23,10 @@ jobs:
         uses: actions/checkout@v3
         with: 
           repository: 'FuelLabs/github-actions'
-          ref: sarah/docs
           path: 'workflow'
       - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
         with:
-          config-file: 'workflow/docs/mlc.next.json'
+          config-file: 'workflow/docs-hub/mlc.next.json'
           file-extension: 'mdx'
 
   check-doc-folders:
@@ -40,7 +39,6 @@ jobs:
         uses: actions/checkout@v3
         with: 
           repository: 'FuelLabs/github-actions'
-          ref: sarah/docs
           path: 'workflow'
       - name: Setup node
         uses: actions/setup-node@v3
@@ -48,6 +46,6 @@ jobs:
           node-version: 18
       - name: Run script
         run: |
-            cd workflow/docs
+            cd workflow/docs-hub
             npm install
             node next-docs.mjs ${{ inputs.doc-folder-path }} ${{ inputs.src-folder-path }}
