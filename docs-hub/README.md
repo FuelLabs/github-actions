@@ -10,8 +10,6 @@ The types of doc architectures that are supported in the docs hub are:
 
 ## MDBooks
 
-To check docs that use mdbooks, use the mdbook-docs workflow.
-
 ### How to use?
 
 ```yml
@@ -43,8 +41,6 @@ This workflow:
 7. Checks to see if a navigation order can be successfully generated from the SUMMARY. 
 
 ## Next
-
-To check docs that use mdbooks, use the mdbook-docs workflow.
 
 ### How to use?
 
