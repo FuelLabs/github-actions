@@ -16,7 +16,7 @@ const subfolders = files.filter((item) =>
   fs.statSync(path.join(DOCS_DIRECTORY, item)).isDirectory()
 );
 
-function main(){
+function main() {
   checkForNestedFolders();
   checkNavConfig();
   checkComponentsConfig();
@@ -26,35 +26,48 @@ function main(){
 
 main();
 
-function checkForNestedFolders(){
+function checkForNestedFolders() {
   const nestedSubfolders = subfolders.filter((subfolder) =>
-      fs
-        .readdirSync(path.join(DOCS_DIRECTORY, subfolder))
-        .some((item) =>
-          fs.statSync(path.join(DOCS_DIRECTORY, subfolder, item)).isDirectory()
-        )
-    );
-    assert.deepStrictEqual(nestedSubfolders.length, 0, "cannot have nested subfolders");
+    fs
+      .readdirSync(path.join(DOCS_DIRECTORY, subfolder))
+      .some((item) =>
+        fs.statSync(path.join(DOCS_DIRECTORY, subfolder, item)).isDirectory()
+      )
+  );
+  assert.deepStrictEqual(
+    nestedSubfolders.length,
+    0,
+    "cannot have nested subfolders"
+  );
 }
 
-function checkNavConfig(){
+function checkNavConfig() {
   const navFile = fs.readFileSync(NAV_PATH, "utf8");
   const navJSON = JSON.parse(navFile);
   assert(Array.isArray(navJSON.menu), "missing nav menu");
   subfolders.forEach((folder) => {
     const folderName = folder.replaceAll("-", "_");
-    assert(Array.isArray(navJSON[folderName]), `missing nav ${folderName} menu`);
+    assert(
+      Array.isArray(navJSON[folderName]),
+      `missing nav ${folderName} menu`
+    );
   });
 }
 
-function checkComponentsConfig(){
+function checkComponentsConfig() {
   const compFile = fs.readFileSync(COMP_CONFIG_PATH, "utf8");
   const compJSON = JSON.parse(compFile);
-  assert(Array.isArray(compJSON.folders), "missing folders array in components.json config");
-  assert(Array.isArray(compJSON.ignore), "missing ignore array in components.json config");
+  assert(
+    Array.isArray(compJSON.folders),
+    "missing folders array in components.json config"
+  );
+  assert(
+    Array.isArray(compJSON.ignore),
+    "missing ignore array in components.json config"
+  );
 }
 
-function checkComponentNames(){
+function checkComponentNames() {
   files.forEach((filename) => {
     const filepath = path.join(DOCS_DIRECTORY, filename);
     if (fs.statSync(filepath).isDirectory()) {
@@ -71,7 +84,7 @@ function checkComponentNames(){
 
 // Examples.Events.Connect && Examples.Connect is ok
 // Examples.Events.Connect.First is not ok
-function checkComponentNesting(){
+function checkComponentNesting() {
   let allComponents = [];
   files.forEach((filename) => {
     const filepath = path.join(DOCS_DIRECTORY, filename);
@@ -102,7 +115,10 @@ function checkFile(filepath) {
   const compFile = fs.readFileSync(COMP_CONFIG_PATH, "utf8");
   const compJSON = JSON.parse(compFile);
   components.forEach((comp) => {
-    if (!compJSON.ignore.includes(comp)) {
+    if (
+      !compJSON.ignore.includes(comp) &&
+      !compJSON.ignore.includes(comp.split(".")[0])
+    ) {
       let actualCompPath = "";
       for (let i = 0; i < compJSON.folders.length; i++) {
         const path = `${compJSON.folders[i]}/${
