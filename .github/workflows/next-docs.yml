@@ -1,0 +1,51 @@
+name: "Docs Hub Check"
+
+on:
+  workflow_call:
+    inputs:
+      doc-folder-path:
+        description: "the folder path where the mdx files live"
+        required: true
+        type: string
+      src-folder-path:
+        description: "the src folder where the nav.json and components.json files live"
+        required: true
+        type: string
+
+jobs: 
+  markdown-link-check:
+    name: Check Links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout repo2
+        uses: actions/checkout@v3
+        with: 
+          repository: 'FuelLabs/github-actions'
+          path: 'workflow'
+      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+        with:
+          config-file: 'workflow/docs-hub/mlc.next.json'
+          file-extension: 'mdx'
+
+  check-doc-folders:
+    name: Check Configs, Components, & Folders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout repo2
+        uses: actions/checkout@v3
+        with: 
+          repository: 'FuelLabs/github-actions'
+          path: 'workflow'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Run script
+        run: |
+            cd workflow/docs-hub
+            npm install
+            node next-docs.mjs ${{ inputs.doc-folder-path }} ${{ inputs.src-folder-path }}

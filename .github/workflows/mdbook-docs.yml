@@ -1,0 +1,61 @@
+name: "Docs Hub Check"
+
+on:
+  workflow_call:
+    inputs:
+      docs-src-path:
+        description: "the folder where SUMMARY.md lives"
+        required: true
+        type: string
+
+jobs: 
+  markdown-link-check:
+    name: Check Links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout repo2
+        uses: actions/checkout@v3
+        with: 
+          repository: 'FuelLabs/github-actions'
+          path: 'workflow'
+      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+        with:
+          config-file: 'workflow/docs-hub/mlc.mdbook.json'
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout repo2
+        uses: actions/checkout@v3
+        with: 
+          repository: 'FuelLabs/github-actions'
+          path: 'workflow'
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: |
+          npm install -g markdownlint-cli@0.32.1
+          markdownlint --config workflow/docs-hub/.markdownlint.yaml --ignore-path workflow/docs-hub/.markdownlintignore '**/*.md'
+  
+  check-doc-folders:
+    name: Check SUMMARY & Folders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout repo2
+        uses: actions/checkout@v3
+        with: 
+          repository: 'FuelLabs/github-actions'
+          path: 'workflow'
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Run script
+        run: node workflow/docs-hub/mdbook-docs.js ${{ inputs.docs-src-path }}
