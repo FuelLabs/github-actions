@@ -3,8 +3,8 @@
 ```yml
 uses: FuelLabs/github-actions/docs-hub/next
 with:
-    doc-folder-path: 'docs'
-    src-folder-path: 'src'
+    doc-folder-path: 'apps/docs'
+    src-folder-path: 'apps/src'
 ```
 
 ### Inputs
