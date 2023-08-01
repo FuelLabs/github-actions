@@ -13,7 +13,7 @@ The types of doc architectures that are supported in the docs hub are:
 ### How to use?
 
 ```yml
-uses: FuelLabs/github-actions/docs-hub/mdbook-docs.yml
+uses: FuelLabs/github-actions/.github/workflows/mdbook-docs.yml
 with:
     docs-src-path: 'docs/book/src'
 ```
@@ -45,7 +45,7 @@ This workflow:
 ### How to use?
 
 ```yml
-uses: FuelLabs/github-actions/docs-hub/next-docs.yml
+uses: FuelLabs/github-actions/.github/workflows/next-docs.yml
 with:
     doc-folder-path: 'docs'
     src-folder-path: 'src'
