@@ -3,7 +3,7 @@ import fs from "fs";
 import { EOL } from "os";
 import path from "path";
 
-const srcFolderPath = path.join(process.cwd(), process.argv[2]);
+const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
 const configPath = path.join(
