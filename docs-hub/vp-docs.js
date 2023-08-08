@@ -129,7 +129,15 @@ function checkOrder(order, altSrcFolderPath = null) {
                 console.log("FOUND:", newPath)
                 newItemPath = newPath
                 break;
-              } 
+              } else {
+                newPath = path.join(srcPath, subFolderExceptions[i], item);
+                console.log("NEW PATH2", newPath )
+                if (fs.existsSync(newPath)) {
+                    console.log("FOUND2:", newPath)
+                    newItemPath = newPath
+                    break;
+                  }    
+              }
             }
             console.log("NEW ITEM PATH:", newItemPath)
             assert(fs.existsSync(newItemPath), `${item.toLowerCase().replace(' ', '-')} doesn't exist at ${itemPath}`);     
