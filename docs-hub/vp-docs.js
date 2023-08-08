@@ -170,6 +170,7 @@ function checkOrder(order, altSrcFolderPath = null) {
         let fileExists = false;
         const newItem = item.replaceAll(" ", "-").toLowerCase();
         let itemPath = path.join(srcPath, thisKey, `/${newItem}.md`);
+        console.log("ITEM PATH1", itemPath)
         if (fs.existsSync(itemPath)) {
           fileExists = true;
         } else {
@@ -180,6 +181,7 @@ function checkOrder(order, altSrcFolderPath = null) {
               thisKey,
               `/${newItem}.md`
             );
+            console.log("ITEM PATH2", itemPath)
             if (fs.existsSync(itemPath)) {
               fileExists = true;
               break;
@@ -190,6 +192,7 @@ function checkOrder(order, altSrcFolderPath = null) {
                 thisKey,
                 `/${item}.md`
               );
+              console.log("ITEM PATH3", itemPath)
               if (fs.existsSync(itemPath)) {
                 fileExists = true;
                 break;
