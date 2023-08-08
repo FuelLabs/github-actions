@@ -121,7 +121,7 @@ function checkOrder(order, altSrcFolderPath = null) {
           console.log("ITEM PATH:", itemPath)
           let newItemPath;
             for(let i = 0; i < subFolderExceptions.length; i++){
-              const newPath = path.join(srcPath, subFolderExceptions[i], item.toLowerCase().replace(' ', '-'));
+              let newPath = path.join(srcPath, subFolderExceptions[i], item.toLowerCase().replace(' ', '-'));
               console.log("SRC PATH:", srcPath)
               console.log("subFolderExceptions[i]:", subFolderExceptions[i])
               console.log("NEW PATH:", newPath)
@@ -131,7 +131,7 @@ function checkOrder(order, altSrcFolderPath = null) {
                 break;
               } else {
                 newPath = path.join(srcPath, subFolderExceptions[i], item);
-                console.log("NEW PATH2", newPath )
+                console.log("NEW PATH2", newPath)
                 if (fs.existsSync(newPath)) {
                     console.log("FOUND2:", newPath)
                     newItemPath = newPath
