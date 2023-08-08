@@ -126,7 +126,7 @@ function checkOrder(order, altSrcFolderPath = null) {
                 break;
               } 
             }
-            assert(fs.existsSync(newItemPath));     
+            assert(fs.existsSync(newItemPath), `${item.toLowerCase().replace(' ', '-')} doesn't exist at ${itemPath}`);     
           } 
       });
     } else {
