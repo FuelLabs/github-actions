@@ -13,7 +13,7 @@ The types of doc architectures that are supported in the docs hub are:
 ### How to use?
 
 ```yml
-uses: FuelLabs/github-actions/.github/workflows/mdbook-docs.yml
+uses: FuelLabs/github-actions/.github/workflows/mdbook-docs.yml@master
 with:
     docs-src-path: 'docs/book/src'
 ```
@@ -45,7 +45,7 @@ This workflow:
 ### How to use?
 
 ```yml
-uses: FuelLabs/github-actions/.github/workflows/next-docs.yml
+uses: FuelLabs/github-actions/.github/workflows/next-docs.yml@master
 with:
     doc-folder-path: 'docs'
     src-folder-path: 'src'
@@ -76,7 +76,33 @@ This workflow:
 
 ## Vitepress
 
-Still in progress.
+### How to use?
+
+```yml
+uses: FuelLabs/github-actions/.github/workflows/vp-docs.yml@master
+with:
+    doc-folder-path: 'apps/docs/src'
+```
+
+### Inputs
+
+| Name         | Description  |
+| ------------ | ------------ |
+| doc-folder-path | the folder path where the markdown files live |
+
+### Outputs
+
+No outputs defined
+
+### What's included
+
+This workflow:
+
+1. Checks for an index.md file in the docs src folder. 
+4. Checks for to make sure there are no nested subfolders (except for those already accounted for in `api` and `guide` folders).
+5. Checks to make sure the file & folder names match what is in the config navigation.
+6. Checks for unused files missing from the config.
+7. Checks to see if a navigation order can be successfully generated from the config.
 
 ## License
 
