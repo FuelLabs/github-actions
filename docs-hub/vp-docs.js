@@ -118,14 +118,20 @@ function checkOrder(order, altSrcFolderPath = null) {
         path.join(srcPath, item.toLowerCase().replace(' ', '-'));
 
         if (!fs.existsSync(itemPath) && !fs.existsSync(itemPath.concat(".md"))) {
+          console.log("ITEM PATH:", itemPath)
           let newItemPath;
             for(let i = 0; i < subFolderExceptions.length; i++){
               const newPath = path.join(srcPath, subFolderExceptions[i], item.toLowerCase().replace(' ', '-'));
+              console.log("SRC PATH:", srcPath)
+              console.log("subFolderExceptions[i]:", subFolderExceptions[i])
+              console.log("NEW PATH:", newPath)
               if (fs.existsSync(newPath)) {
+                console.log("FOUND:", newPath)
                 newItemPath = newPath
                 break;
               } 
             }
+            console.log("NEW ITEM PATH:", newItemPath)
             assert(fs.existsSync(newItemPath), `${item.toLowerCase().replace(' ', '-')} doesn't exist at ${itemPath}`);     
           } 
       });
