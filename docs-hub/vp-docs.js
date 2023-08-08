@@ -6,17 +6,11 @@ import path from "path";
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
-const configPath = path.join(
-  srcFolderPath,
-  '../.vitepress/config.ts'
-);
-const apiOrderPath = path.join(
-  srcFolderPath,
-  '../.typedoc/api-links.json'
-);
+const configPath = path.join(srcFolderPath, "../.vitepress/config.ts");
+const apiOrderPath = path.join(srcFolderPath, "../.typedoc/api-links.json");
 
-const configFile = fs.readFileSync(configPath, 'utf8');
-const apiOrderFile = fs.readFileSync(apiOrderPath, 'utf8');
+const configFile = fs.readFileSync(configPath, "utf8");
+const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
 
 const subFolderExceptions = ["guide", "api"];
 
@@ -35,20 +29,24 @@ function checkForIndexFile(srcFolderPath) {
   assert(fs.existsSync(indexPath), "missing index.md at root");
 }
 
-function getSubfolders(folderPath){
+function getSubfolders(folderPath) {
   return fs
-  .readdirSync(folderPath)
-  .filter((item) => fs.statSync(path.join(folderPath, item)).isDirectory() && item !== 'public');
+    .readdirSync(folderPath)
+    .filter(
+      (item) =>
+        fs.statSync(path.join(folderPath, item)).isDirectory() &&
+        item !== "public"
+    );
 }
 
-function getNestedFolders(subfolders, folderPath){
+function getNestedFolders(subfolders, folderPath) {
   return subfolders.filter((subfolder) =>
-  fs
-    .readdirSync(path.join(folderPath, subfolder))
-    .some((item) =>
-      fs.statSync(path.join(folderPath, subfolder, item)).isDirectory()
-    )
-);
+    fs
+      .readdirSync(path.join(folderPath, subfolder))
+      .some((item) =>
+        fs.statSync(path.join(folderPath, subfolder, item)).isDirectory()
+      )
+  );
 }
 
 function checkForNestedFolders(subfolders, srcFolderPath) {
@@ -57,12 +55,21 @@ function checkForNestedFolders(subfolders, srcFolderPath) {
     nestedSubfolders.forEach((folder) => {
       assert(
         subFolderExceptions.includes(folder),
-        `cannot have nested subfolders except for in ${subFolderExceptions.map((folder) => folder).join(", ")}`
+        `cannot have nested subfolders except for in ${subFolderExceptions
+          .map((folder) => folder)
+          .join(", ")}`
       );
-      const subSubFolderPath = path.join(srcFolderPath, folder)
+      const subSubFolderPath = path.join(srcFolderPath, folder);
       const subSubFolders = getSubfolders(subSubFolderPath);
-      const nestedSubSubFolders = getNestedFolders(subSubFolders, subSubFolderPath);
-      assert.deepStrictEqual(nestedSubSubFolders.length, 0, `cannot have nested folders inside ${folder}`);
+      const nestedSubSubFolders = getNestedFolders(
+        subSubFolders,
+        subSubFolderPath
+      );
+      assert.deepStrictEqual(
+        nestedSubSubFolders.length,
+        0,
+        `cannot have nested folders inside ${folder}`
+      );
     });
   }
 }
@@ -71,8 +78,16 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
   // check if each file can be found in the config
   const fileNames = fs.readdirSync(srcFolderPath);
   fileNames.forEach((file) => {
-    if (file !== "api" && file !== 'public' && file !== 'index.md' && (file.endsWith("md") || file.split(".").length === 1)) {
-      assert(configFile.includes(file.replace(".md", "")), `${file} missing in the nav config`);
+    if (
+      file !== "api" &&
+      file !== "public" &&
+      file !== "index.md" &&
+      (file.endsWith("md") || file.split(".").length === 1)
+    ) {
+      assert(
+        configFile.includes(file.replace(".md", "")),
+        `${file} missing in the nav config`
+      );
     }
   });
   subfolders.forEach((folder) => {
@@ -80,26 +95,27 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
     const subfolderNames = fs.readdirSync(folderPath);
     const parentFolder = folderPath.split("/").pop();
     subfolderNames.forEach((subFile) => {
-      if(parentFolder !== 'api') {
-        const actualPath = `${parentFolder}/${subFile === 'index.md' ? "" : subFile}`;
+      if (parentFolder !== "api") {
+        const actualPath = `${parentFolder}/${
+          subFile === "index.md" ? "" : subFile
+        }`;
         assert(
           configFile.includes(actualPath),
           `${actualPath} missing in the nav config`
         );
-        const fullPath = path.join(srcFolderPath, actualPath)
-        if(fs.statSync(fullPath).isDirectory()){
+        const fullPath = path.join(srcFolderPath, actualPath);
+        if (fs.statSync(fullPath).isDirectory()) {
           const subFolderFiles = fs.readdirSync(fullPath);
           subFolderFiles.forEach((file) => {
-            if(file !== 'index.md'){
+            if (file !== "index.md") {
               assert(
                 configFile.includes(file.replace(".md", "")),
                 `${file} missing in the nav config`
               );
             }
-          })
+          });
         }
       }
-      
     });
   });
 }
@@ -112,36 +128,40 @@ function checkOrder(order, altSrcFolderPath = null) {
       // check if each line in the menu corresponds to
       // an existing top-level file or the name of the folder
       menuOrder.forEach((item) => {
-        const itemPath = item === "Introduction" ? 
-        path.join(srcPath, "index.md") 
-        :
-        path.join(srcPath, item.toLowerCase().replace(' ', '-'));
+        const itemPath =
+          item === "Introduction"
+            ? path.join(srcPath, "index.md")
+            : path.join(srcPath, item.toLowerCase().replace(" ", "-"));
 
-        if (!fs.existsSync(itemPath) && !fs.existsSync(itemPath.concat(".md"))) {
-          console.log("ITEM PATH:", itemPath)
+        if (
+          !fs.existsSync(itemPath) &&
+          !fs.existsSync(itemPath.concat(".md"))
+        ) {
           let newItemPath;
-            for(let i = 0; i < subFolderExceptions.length; i++){
-              let newPath = path.join(srcPath, subFolderExceptions[i], item.toLowerCase().replace(' ', '-'));
-              console.log("SRC PATH:", srcPath)
-              console.log("subFolderExceptions[i]:", subFolderExceptions[i])
-              console.log("NEW PATH:", newPath)
+          for (let i = 0; i < subFolderExceptions.length; i++) {
+            let newPath = path.join(
+              srcPath,
+              subFolderExceptions[i],
+              item.toLowerCase().replace(" ", "-")
+            );
+            if (fs.existsSync(newPath)) {
+              newItemPath = newPath;
+              break;
+            } else {
+              newPath = path.join(srcPath, subFolderExceptions[i], item);
               if (fs.existsSync(newPath)) {
-                console.log("FOUND:", newPath)
-                newItemPath = newPath
+                newItemPath = newPath;
                 break;
-              } else {
-                newPath = path.join(srcPath, subFolderExceptions[i], item);
-                console.log("NEW PATH2", newPath)
-                if (fs.existsSync(newPath)) {
-                    console.log("FOUND2:", newPath)
-                    newItemPath = newPath
-                    break;
-                  }    
               }
             }
-            console.log("NEW ITEM PATH:", newItemPath)
-            assert(fs.existsSync(newItemPath), `${item.toLowerCase().replace(' ', '-')} doesn't exist at ${itemPath}`);     
-          } 
+          }
+          assert(
+            fs.existsSync(newItemPath),
+            `${item
+              .toLowerCase()
+              .replace(" ", "-")} doesn't exist at ${itemPath}`
+          );
+        }
       });
     } else {
       const thisKey = key.replaceAll(" ", "-").toLowerCase();
@@ -149,34 +169,42 @@ function checkOrder(order, altSrcFolderPath = null) {
       menuOrder.forEach((item) => {
         let fileExists = false;
         const newItem = item.replaceAll(" ", "-").toLowerCase();
-          let itemPath = path.join(
-            srcPath,
-            thisKey,
-            `/${newItem}.md`
-          );
-          if(fs.existsSync(itemPath)){
-            fileExists = true;
-          } else {
-            for(let i = 0; i < subFolderExceptions.length; i++){
+        let itemPath = path.join(srcPath, thisKey, `/${newItem}.md`);
+        if (fs.existsSync(itemPath)) {
+          fileExists = true;
+        } else {
+          for (let i = 0; i < subFolderExceptions.length; i++) {
+            itemPath = path.join(
+              srcPath,
+              subFolderExceptions[i],
+              thisKey,
+              `/${newItem}.md`
+            );
+            if (fs.existsSync(itemPath)) {
+              fileExists = true;
+              break;
+            } else {
               itemPath = path.join(
                 srcPath,
                 subFolderExceptions[i],
                 thisKey,
-                `/${newItem}.md`
+                `/${item}.md`
               );
-
-              if(fs.existsSync(itemPath)){
+              if (fs.existsSync(itemPath)) {
                 fileExists = true;
                 break;
               }
             }
           }
-        assert(fileExists, `${item} doesn't exist. The file name must match the title in the nav config.`);
-      })
+        }
+        assert(
+          fileExists,
+          `${item} doesn't exist. The file name must match the title in the nav config.`
+        );
+      });
     }
   });
 }
-
 
 function extractData(inputString) {
   // used for api.json order
@@ -194,11 +222,11 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
   let newVPOrder = JSON.parse(JSON.stringify(thisOrder));
   let category = thisCat;
   if (
-    trimmedLine.includes('collapsed:') ||
+    trimmedLine.includes("collapsed:") ||
     trimmedLine.includes('"collapsed":')
   ) {
     // handle categories
-    if (trimmedLine.includes('collapsed:')) {
+    if (trimmedLine.includes("collapsed:")) {
       const matches = regex.exec(lines[index - 2]);
       category = matches[1];
     } else {
@@ -208,8 +236,8 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
     newVPOrder[category] = [];
   } else if (
     // handle items
-    trimmedLine.includes('text') &&
-    !lines[index + 2].includes('collapsed:') &&
+    trimmedLine.includes("text") &&
+    !lines[index + 2].includes("collapsed:") &&
     !lines[index + 2].includes('"collapsed":')
   ) {
     const matches = regex.exec(trimmedLine);
@@ -224,19 +252,19 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
       link = extractData(lines[index + 1].trimStart());
     }
     if (link && linkName) {
-      if (link.startsWith('/')) {
-        link = link.replace('/', '');
+      if (link.startsWith("/")) {
+        link = link.replace("/", "");
       }
-      const split = link.split('/');
-      if (category && split.length !== 2 && split[1] !== '') {
+      const split = link.split("/");
+      if (category && split.length !== 2 && split[1] !== "") {
         newVPOrder[category].push(linkName);
       } else {
         newVPOrder.menu.push(linkName);
       }
     }
-  } else if (trimmedLine.startsWith('apiLinks')) {
+  } else if (trimmedLine.startsWith("apiLinks")) {
     // handle API order
-    newVPOrder.menu.push('API');
+    newVPOrder.menu.push("API");
     const apiJSON = JSON.parse(apiOrderFile);
     const apiLines = JSON.stringify(apiJSON, null, 2).split(EOL);
     apiLines.forEach((apiLine, apiIndex) => {
@@ -272,7 +300,7 @@ function processVPConfig(lines) {
       );
       tsOrder = newVPOrder;
       currentCategory = category;
-    } else if (trimmedLine === 'sidebar: [') {
+    } else if (trimmedLine === "sidebar: [") {
       foundStart = true;
     }
   });
