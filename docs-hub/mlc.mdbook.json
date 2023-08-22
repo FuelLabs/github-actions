@@ -18,6 +18,9 @@
       },
       {
         "pattern": "adobe\\.com"
+      },
+      {
+        "pattern": "docs\\.rs/[\\w_-]+/{{versions\\.[\\w_-]+}}"
       }
     ]
   }
