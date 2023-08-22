@@ -20,9 +20,6 @@
       "pattern": "adobe\\.com"
     },
     {
-      "pattern": "scripts.sil.org"
-    },
-    {
       "pattern": "^\\.\\."
     },
     {
