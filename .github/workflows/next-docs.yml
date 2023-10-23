@@ -13,22 +13,6 @@ on:
         type: string
 
 jobs: 
-  markdown-link-check:
-    name: Check Links
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Checkout repo2
-        uses: actions/checkout@v3
-        with: 
-          repository: 'FuelLabs/github-actions'
-          path: 'workflow'
-      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
-        with:
-          config-file: 'workflow/docs-hub/mlc.next.json'
-          file-extension: 'mdx'
-
   check-doc-folders:
     name: Check Configs, Components, & Folders
     runs-on: ubuntu-latest

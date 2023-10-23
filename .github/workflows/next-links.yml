@@ -1,0 +1,44 @@
+name: Next Links
+
+on:
+    workflow_call:
+      inputs:
+        status:
+          description: "deployment status, should be 'success'"
+          required: true
+          type: string
+        preview-url:
+          description: "PR preview URL"
+          required: true
+          type: string
+        folder-path:
+          description: "only check mdx links in this folder"
+          required: false
+          type: string
+          default: "."
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout repo
+          uses: actions/checkout@v3
+        - name: Checkout repo2
+          uses: actions/checkout@v3
+          with: 
+            repository: 'FuelLabs/github-actions'
+            path: 'workflow'
+        # SETUP NODE
+        - name: Setup node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 18
+        # RUN SCRIPT TO USE VERCEL PREVIEW LINK FROM PR
+        - name: Update preview link
+          run: node workflow/docs-hub/generate-mlc-config.mjs ${{ inputs.status }} ${{ inputs.preview-url }}
+        # RUN LINK CHECK
+        - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+          with:
+            config-file: 'workflow/docs-hub/mlc.next.json'
+            file-extension: 'mdx'
+            folder-path: ${{ inputs.folder-path }}
