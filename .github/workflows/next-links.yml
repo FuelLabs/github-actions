@@ -23,6 +23,7 @@ jobs:
           with: 
             repository: 'FuelLabs/github-actions'
             path: 'workflow'
+            ref: sarah/next-links-check
         # SETUP NODE
         - name: Setup node
           uses: actions/setup-node@v3
