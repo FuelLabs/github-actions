@@ -1,0 +1,29 @@
+name: Next Links
+
+on:
+    deployment_status
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout repo
+          uses: actions/checkout@v3
+        - name: Checkout repo2
+          uses: actions/checkout@v3
+          with: 
+            repository: 'FuelLabs/github-actions'
+            path: 'workflow'
+        # SETUP NODE
+        - name: Setup node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 18
+        # RUN SCRIPT TO USE VERCEL PREVIEW LINK FROM PR
+        - name: Update preview link
+          run: node workflow/docs-hub/generate-mlc-config.mjs ${{ github.event.deployment_status.state }} ${{ github.event.deployment_status.environment_url }}
+        # RUN LINK CHECK
+        - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+          with:
+            config-file: 'workflow/docs-hub/mlc.next.json'
+            file-extension: 'mdx'

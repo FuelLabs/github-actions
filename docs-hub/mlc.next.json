@@ -23,9 +23,6 @@
       "pattern": "scripts.sil.org"
     },
     {
-      "pattern": "^\\.\\."
-    },
-    {
       "pattern": "^@repository"
     },
     {
@@ -33,6 +30,12 @@
     },
     {
       "pattern": "\\.png$"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^(/)(.*)",
+      "replacement": "{{VERCEL_PREVIEW}}/$2"
     }
   ]
 }
