@@ -11,6 +11,11 @@ on:
           description: "PR preview URL"
           required: true
           type: string
+        folder-path:
+          description: "only check mdx links in this folder"
+          required: false
+          type: string
+          default: "."
 
 jobs:
   check-links:
@@ -37,3 +42,4 @@ jobs:
           with:
             config-file: 'workflow/docs-hub/mlc.next.json'
             file-extension: 'mdx'
+            folder-path: ${{ inputs.folder-path }}
