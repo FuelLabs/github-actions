@@ -1,7 +1,16 @@
 name: Next Links
 
 on:
-    deployment_status
+    workflow_call:
+      inputs:
+        status:
+          description: "deployment status, should be 'success'"
+          required: true
+          type: string
+        preview-url:
+          description: "PR preview URL"
+          required: true
+          type: string
 
 jobs:
   check-links:
@@ -21,7 +30,7 @@ jobs:
             node-version: 18
         # RUN SCRIPT TO USE VERCEL PREVIEW LINK FROM PR
         - name: Update preview link
-          run: node workflow/docs-hub/generate-mlc-config.mjs ${{ github.event.deployment_status.state }} ${{ github.event.deployment_status.environment_url }}
+          run: node workflow/docs-hub/generate-mlc-config.mjs ${{ inputs.status }} ${{ inputs.preview-url }}
         # RUN LINK CHECK
         - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
           with:
