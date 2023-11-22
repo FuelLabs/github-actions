@@ -7,15 +7,15 @@ on:
         description: "the folder where SUMMARY.md lives"
         required: true
         type: string
+      spellcheck-config-path:
+        description: "the path where the .spellcheck.yml file lives"
+        required: true
+        type: string
       pre-command:
         description: "a command to run before the jobs"
         required: false
         type: string
         default: ''
-      spellcheck-config-path:
-        description: "the path where the .spellcheck.yml file lives"
-        required: true
-        type: string
 
 jobs: 
   spell-check:
