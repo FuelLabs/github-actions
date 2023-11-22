@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       spellcheck-config-path:
-        description: "the folder where the .spellcheck.yml file lives"
+        description: "the path where the .spellcheck.yml file lives"
         required: true
         type: string
 
