@@ -7,6 +7,10 @@ on:
         description: "the folder where SUMMARY.md lives"
         required: true
         type: string
+      spellcheck-config-path:
+        description: "the path where the .spellcheck.yml file lives"
+        required: true
+        type: string
       pre-command:
         description: "a command to run before the jobs"
         required: false
@@ -52,7 +56,7 @@ jobs:
       - run: |
           npm install -g markdownlint-cli@0.32.1
           markdownlint --config workflow/docs-hub/.markdownlint.yaml --ignore-path workflow/docs-hub/.markdownlintignore '**/*.md'
-  
+
   check-doc-folders:
     name: Check SUMMARY & Folders
     runs-on: ubuntu-latest
@@ -73,3 +77,17 @@ jobs:
           node-version: 18
       - name: Run script
         run: node workflow/docs-hub/mdbook-docs.js ${{ inputs.docs-src-path }}
+        
+  spell-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Run pre-command
+        if: inputs.pre-command != ''
+        run: ${{ inputs.pre-command }}
+      - uses: rojopolis/spellcheck-github-actions@0.34.0
+        name: Spellcheck
+        with:
+          config_path: ${{ inputs.spellcheck-config-path }}
+          task_name: SPCheck
