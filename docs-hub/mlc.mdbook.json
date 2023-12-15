@@ -23,9 +23,6 @@
       "pattern": "scripts.sil.org"
     },
     {
-      "pattern": "\\b(?<!d)(http[s]?://)?(www\\.)?x\\.com\\b"
-    },
-    {
       "pattern": "twitter.com"
     }
   ]

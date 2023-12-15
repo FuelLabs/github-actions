@@ -35,9 +35,6 @@
       "pattern": "\\.png$"
     },
     {
-      "pattern": "\\b(?<!d)(http[s]?://)?(www\\.)?x\\.com\\b"
-    },
-    {
       "pattern": "twitter.com"
     }
   ],
