@@ -23,7 +23,7 @@
       "pattern": "scripts.sil.org"
     },
     {
-      "pattern": "twitter\\.com"
+      "pattern": "^https://twitter.com"
     }
   ]
 }

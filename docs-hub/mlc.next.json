@@ -35,7 +35,7 @@
       "pattern": "\\.png$"
     },
     {
-      "pattern": "twitter\\.com"
+      "pattern": "^https://twitter.com"
     }
   ],
   "replacementPatterns": [
