@@ -33,6 +33,9 @@
     },
     {
       "pattern": "\\.png$"
+    },
+    {
+      "pattern": "^https://twitter.com"
     }
   ],
   "replacementPatterns": [
