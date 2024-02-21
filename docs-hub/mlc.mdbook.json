@@ -1,5 +1,5 @@
 {
-  "aliveStatusCodes": [200, 206, 405],
+  "aliveStatusCodes": [200, 206, 403, 405],
   "ignorePatterns": [
     {
       "pattern": "localhost:"
