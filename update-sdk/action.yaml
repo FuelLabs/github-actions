@@ -16,5 +16,5 @@ inputs:
     default: latest
 
 runs:
-  using: "composite"
+  using: "node20"
   main: "dist/index.js"
