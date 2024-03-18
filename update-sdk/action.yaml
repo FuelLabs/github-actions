@@ -8,6 +8,9 @@ inputs:
   branch:
     description: "Branch name"
     default: main
+  packages:
+    description: "Packages to update"
+    required: true
   npm-tag:
     description: "NPM tag (e.g. latest or next)"
     default: latest

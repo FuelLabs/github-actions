@@ -7,10 +7,12 @@ export class ReleaseBot {
   private git!: Github;
   private base: string;
   private version: string;
+  private packages: string[];
 
-  constructor(repository: string, base: string, version: string) {
+  constructor(repository: string, base: string, version: string, packages: string[]) {
     this.version = version;
     this.base = base;
+    this.packages = packages;
     this.git = new Github(repository);
   }
 
@@ -22,7 +24,7 @@ export class ReleaseBot {
       await this.git.setupGitAgent();
       const existingBranch = await this._newReleaseBranch(head);
 
-      await PackageJson.updateDependencies(version);
+      await PackageJson.updateDependencies(version, this.packages);
 
       const updatedPackages = await this.git.getUpdatedPackages();
       if (!updatedPackages.length) {
