@@ -15,3 +15,11 @@ inputs:
 runs:
   using: "node20"
   main: "dist/index.js"
+
+steps:
+  - name: Debugging
+    run: |
+      echo "Current working directory: $(pwd)"
+      ls -al
+      git status
+      # Add more debugging commands as needed
