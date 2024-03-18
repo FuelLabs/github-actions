@@ -17,7 +17,7 @@ export class ReleaseBot {
 
     try {
       const branchName = this._sdkBranchName(version);
-      // await this.git.setupGitAgent();
+      await this.git.setupGitAgent();
       const existingBranch = await this._newReleaseBranch(branchName);
 
       await PackageJson.updateDependencies(version);
