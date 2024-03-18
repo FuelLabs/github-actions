@@ -6,7 +6,7 @@
   "scripts": {
     "ts:check": "tsc --noEmit",
     "build": "tsup",
-    "check-versions": "tsx src/index.ts"
+    "dev": "tsx src/index.ts"
   },
   "devDependencies": {
     "@fuels/ts-config": "0.17.0",

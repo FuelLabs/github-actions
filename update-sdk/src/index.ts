@@ -5,7 +5,7 @@ async function main() {
   const repository = core.getInput('repository');
   const npmTag = core.getInput('npm-tag');
 
-  const bot = new ReleaseBot(repository, npmTag);
+  const bot = new ReleaseBot(repository, 'latest');
   await bot.release();
 }
 

@@ -14,6 +14,10 @@ export class Github {
 
   async createBranch(branchName: string): Promise<boolean> {
     let branchExists = false;
+    
+    await $`echo $(pwd)`;
+    await $`ls -al`;
+
     try {
       await $`git show-ref --heads | grep ${branchName}`;
       branchExists = true;
