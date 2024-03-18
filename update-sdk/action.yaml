@@ -1,4 +1,4 @@
-name: "Update SDK"
+name: "SDK Outdated"
 description: "Reusable workflow for update the SDK packages"
 
 inputs:
