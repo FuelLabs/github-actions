@@ -3,12 +3,11 @@ import c from 'chalk';
 import { Github } from './Github';
 import { PackageJson } from './PackageJson';
 
-type Version = typeof process.env.NPM_TAG;
 export class ReleaseBot {
   private git!: Github;
-  private version: Version;
+  private version: string;
 
-  constructor(owner: string, repo: string, version: Version) {
+  constructor(owner: string, repo: string, version: string) {
     this.version = version;
     this.git = new Github(owner, repo);
   }

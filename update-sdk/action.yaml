@@ -1,23 +1,20 @@
 name: "Update SDK"
+description: "Reusable workflow for update the SDK packages"
 
 inputs:
+  token:
+    description: "Github Token"
+    default: ${{ github.token }}
+  organization:
+    description: "Github Organization"
+    default: ${{ github.repository_owner }}
+  repository:
+    description: "Github Repository"
+    default: ${{ github.repository }}
   npm-tag:
-    description: "NPM tag (e.g. latest)"
+    description: "NPM tag (e.g. latest or next)"
     default: latest
 
 runs:
   using: "composite"
-  steps:
-    - uses: actions/checkout@v3
-    - uses: ./setups/node
-
-    - name: Check versions
-      run: |
-        pnpm install
-        pnpm check-versions
-      working-directory: ./gh-projects/update-sdk
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-        GITHUB_ORGANIZATION: ${{ github.repository_owner }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        NPM_TAG: ${{ inputs.npm-tag }}
+  main: "dist/index.js"
