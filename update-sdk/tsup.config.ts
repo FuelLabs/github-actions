@@ -6,6 +6,7 @@ const options: Options = {
   outDir: 'dist',
   splitting: false,
   sourcemap: false,
+  noExternal: ['@actions/core'],
   format: ['cjs'],
 };
 
