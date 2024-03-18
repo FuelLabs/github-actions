@@ -13,18 +13,16 @@ export class Github {
   }
 
   async createBranch(branchName: string): Promise<boolean> {
-    const cwd = resolve(process.cwd(), '../../');
-    const $$ = $({ cwd });
     let branchExists = false;
     try {
-      await $$`git show-ref --heads | grep ${branchName}`;
+      await $`git show-ref --heads | grep ${branchName}`;
       branchExists = true;
     } catch (e) {
       branchExists = false;
     }
 
     if (!branchExists) {
-      await $$`git checkout -b ${branchName}`;
+      await $`git checkout -b ${branchName}`;
     }
 
     return branchExists;
