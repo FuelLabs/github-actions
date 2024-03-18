@@ -10,7 +10,7 @@ inputs:
     default: ${{ github.repository_owner }}
   repository:
     description: "Github Repository"
-    default: ${{ github.repository }}
+    required: true
   npm-tag:
     description: "NPM tag (e.g. latest or next)"
     default: latest
