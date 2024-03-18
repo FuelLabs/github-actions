@@ -7,7 +7,9 @@ A github action to update the SDK packages.
 ```yml
 - uses: FuelLabs/github-actions/update-sdk@master
   with:
-    npm-tag: ${{  matrix.tag }}
+    npm-tag: ${{ matrix.tag }} # Or anything else
+  env:
+    GH_TOKEN: ${{ secrets.REPO_TOKEN }}
 ```
 
 ### Inputs

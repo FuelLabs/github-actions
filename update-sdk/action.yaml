@@ -2,9 +2,6 @@ name: "SDK Outdated"
 description: "Reusable workflow for update the SDK packages"
 
 inputs:
-  token:
-    description: "Github Token"
-    default: ${{ github.token }}
   repository:
     description: "Github Repository"
     default: ${{ github.repository }}
