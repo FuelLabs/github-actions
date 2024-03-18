@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import c from 'chalk';
 import { $ } from 'execa';
 
@@ -14,10 +13,7 @@ export class Github {
 
   async createBranch(branchName: string): Promise<boolean> {
     let branchExists = false;
-    
-    await $`echo $(pwd)`;
-    await $`ls -al`;
-
+  
     try {
       await $`git show-ref --heads | grep ${branchName}`;
       branchExists = true;
@@ -33,11 +29,9 @@ export class Github {
   }
 
   async pushingFromStage(branchName: string, commit: string) {
-    const cwd = resolve(process.cwd(), '../../');
-    const $$ = $({ cwd });
-    await $$`git add .`;
-    await $$`git commit -m ${commit} --no-verify`;
-    await $$`git push origin ${branchName} --force`;
+    await $`git add .`;
+    await $`git commit -m ${commit} --no-verify`;
+    await $`git push origin ${branchName} --force`;
   }
 
   async createPullRequest({
@@ -52,11 +46,8 @@ export class Github {
     body: string;
   }) {
     console.log(c.white(`📤 Pushing branch ${head}`));
-    const cwd = resolve(process.cwd(), '../../');
-    const $$ = $({ cwd });
-    await $$`gh repo set-default ${this.repository}`;
-    const { stdout } =
-      await $$`gh pr create --base ${base} --head ${head} --title ${title} --body ${body}`;
+    await $`gh repo set-default ${this.repository}`;
+    const { stdout } = await $`gh pr create --base ${base} --head ${head} --title ${title} --body ${body}`;
     console.log(c.green(`✅ PR created: ${stdout}`));
   }
 

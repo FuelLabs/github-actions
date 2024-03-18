@@ -20,20 +20,20 @@ export class ReleaseBot {
       // await this.git.setupGitAgent();
       const existingBranch = await this._newReleaseBranch(branchName);
 
-      // await PackageJson.updateDependencies(version);
+      await PackageJson.updateDependencies(version);
 
-      // const updatedPackages = await this.git.getUpdatedPackages();
-      // if (!updatedPackages.length) {
-      //   console.log(c.green('✅ No updated packages found'));
-      //   return;
-      // }
+      const updatedPackages = await this.git.getUpdatedPackages();
+      if (!updatedPackages.length) {
+        console.log(c.green('✅ No updated packages found'));
+        return;
+      }
 
-      // console.log(c.green('⌛️ List of updated:'));
-      // for (const updatedPackage of updatedPackages.split('\n')) {
-      //   console.log(c.green(`📦 ${updatedPackage}`));
-      // }
+      console.log(c.green('⌛️ List of updated:'));
+      for (const updatedPackage of updatedPackages.split('\n')) {
+        console.log(c.green(`📦 ${updatedPackage}`));
+      }
 
-      // await this._commitUpdates(branchName, version, existingBranch);
+      await this._commitUpdates(branchName, version, existingBranch);
     } catch (e) {
       console.log(c.red(`❌ Error releasing ${version}`));
       console.log(e);
@@ -53,7 +53,7 @@ export class ReleaseBot {
     console.log(c.white(`🔀 Committing changes to ${branchName}\n`));
     const commitMessage = `feat: updating packages to tag ${version}`;
 
-    // await this.git.pushingFromStage(branchName, commitMessage);
+    await this.git.pushingFromStage(branchName, commitMessage);
 
     // if (!existingBranch) {
     //   await this.git.createPullRequest({
