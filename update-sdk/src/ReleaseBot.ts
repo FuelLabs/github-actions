@@ -7,9 +7,9 @@ export class ReleaseBot {
   private git!: Github;
   private version: string;
 
-  constructor(owner: string, repo: string, version: string) {
+  constructor(repository: string, version: string) {
     this.version = version;
-    this.git = new Github(owner, repo);
+    this.git = new Github(repository);
   }
 
   async release() {

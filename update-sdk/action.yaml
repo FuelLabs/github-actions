@@ -5,12 +5,9 @@ inputs:
   token:
     description: "Github Token"
     default: ${{ github.token }}
-  organization:
-    description: "Github Organization"
-    default: ${{ github.repository_owner }}
   repository:
     description: "Github Repository"
-    required: true
+    default: ${{ github.repository }}
   npm-tag:
     description: "NPM tag (e.g. latest or next)"
     default: latest

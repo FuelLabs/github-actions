@@ -4,8 +4,7 @@ import { $ } from 'execa';
 
 export class Github {
   constructor(
-    private owner: string,
-    private repo: string
+    private repository: string
   ) {}
 
   async getUpdatedPackages() {
@@ -53,7 +52,7 @@ export class Github {
     console.log(c.white(`📤 Pushing branch ${head}`));
     const cwd = resolve(process.cwd(), '../../');
     const $$ = $({ cwd });
-    await $$`gh repo set-default ${this.owner}/${this.repo}`;
+    await $$`gh repo set-default ${this.repository}`;
     const { stdout } =
       await $$`gh pr create --base ${base} --head ${head} --title ${title} --body ${body}`;
     console.log(c.green(`✅ PR created: ${stdout}`));
