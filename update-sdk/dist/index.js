@@ -70,7 +70,7 @@ ${r.message}`:l,F=[w,e,A].filter(Boolean).join(`
 `)),await(0,AC.promisify)($B.exec)(`pnpm update "@fuels/react@${e}" "@fuels/connectors@${e}" "fuels@${e}" --recursive`)}};var vs=class{constructor(e,t){this.version=t,this.git=new Hs(e)}async release(){let e=this.version;try{let t=this._sdkBranchName(e);await this.git.setupGitAgent();let r=await this._newReleaseBranch(t);await Vs.updateDependencies(e);let n=await this.git.getUpdatedPackages();if(!n.length){console.log(Ce.green("\u2705 No updated packages found"));return}console.log(Ce.green("\u231B\uFE0F List of updated:"));for(let s of n.split(`
 `))console.log(Ce.green(`\u{1F4E6} ${s}`));await this._commitUpdates(t,e,r)}catch(t){console.log(Ce.red(`\u274C Error releasing ${e}`)),console.log(t)}}async _newReleaseBranch(e){return console.log(Ce.white(`\u{1F500} Creating branch ${e}
 `)),await this.git.createBranch(e)}async _commitUpdates(e,t,r){console.log(Ce.white(`\u{1F500} Committing changes to ${e}
-`));let n=`feat: updating packages to tag ${t}`;await this.git.pushingFromStage(e,n)}_sdkBranchName(e){return`ci/sdk-update/${e}`}};var XQ=yA(vQ());async function gx(){let A=XQ.getInput("repository"),e=XQ.getInput("npm-tag");await new vs(A,e).release()}gx();
+`));let n=`feat: updating packages to tag ${t}`;await this.git.pushingFromStage(e,n),r||await this.git.createPullRequest({base:"master",head:e,title:`feat: updating sdk to ${t}`,body:`\u2728 This PR updates the SDK to tag ${t}`})}_sdkBranchName(e){return`ci/sdk-update/${e}`}};var XQ=yA(vQ());async function gx(){let A=XQ.getInput("repository"),e=XQ.getInput("npm-tag");await new vs(A,e).release()}gx();
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:

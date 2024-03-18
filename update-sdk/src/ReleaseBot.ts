@@ -55,14 +55,14 @@ export class ReleaseBot {
 
     await this.git.pushingFromStage(branchName, commitMessage);
 
-    // if (!existingBranch) {
-    //   await this.git.createPullRequest({
-    //     base: 'master',
-    //     head: branchName,
-    //     title: `feat: updating sdk to ${version}`,
-    //     body: `✨ This PR updates the SDK to tag ${version}`,
-    //   });
-    // }
+    if (!existingBranch) {
+      await this.git.createPullRequest({
+        base: 'master',
+        head: branchName,
+        title: `feat: updating sdk to ${version}`,
+        body: `✨ This PR updates the SDK to tag ${version}`,
+      });
+    }
   }
 
   private _sdkBranchName(version: string) {
