@@ -1,0 +1,23 @@
+name: "Update SDK"
+
+inputs:
+  npm-tag:
+    description: "NPM tag (e.g. latest)"
+    default: latest
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - uses: ./setups/node
+
+    - name: Check versions
+      run: |
+        pnpm install
+        pnpm check-versions
+      working-directory: ./gh-projects/update-sdk
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_ORGANIZATION: ${{ github.repository_owner }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        NPM_TAG: ${{ inputs.npm-tag }}

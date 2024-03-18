@@ -1,0 +1,17 @@
+{
+  "name": "update-sdk",
+  "private": true,
+  "license": "Apache-2.0",
+  "main": "./src/index.ts",
+  "scripts": {
+    "ts:check": "tsc --noEmit",
+    "check-versions": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@fuels/ts-config": "0.17.0",
+    "@types/node": "20.11.29",
+    "chalk": "5.3.0",
+    "execa": "8.0.1",
+    "tsx": "4.7.1"
+  }
+}
