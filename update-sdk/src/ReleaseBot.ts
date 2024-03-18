@@ -5,10 +5,12 @@ import { PackageJson } from './PackageJson';
 
 export class ReleaseBot {
   private git!: Github;
+  private base: string;
   private version: string;
 
-  constructor(repository: string, version: string) {
+  constructor(repository: string, base: string, version: string) {
     this.version = version;
+    this.base = base;
     this.git = new Github(repository);
   }
 
@@ -16,9 +18,9 @@ export class ReleaseBot {
     const version = this.version;
 
     try {
-      const branchName = this._sdkBranchName(version);
+      const head = this._sdkBranchName(version);
       await this.git.setupGitAgent();
-      const existingBranch = await this._newReleaseBranch(branchName);
+      const existingBranch = await this._newReleaseBranch(head);
 
       await PackageJson.updateDependencies(version);
 
@@ -33,7 +35,7 @@ export class ReleaseBot {
         console.log(c.green(`📦 ${updatedPackage}`));
       }
 
-      await this._commitUpdates(branchName, version, existingBranch);
+      await this._commitUpdates(this.base, head, version, existingBranch);
     } catch (e) {
       console.log(c.red(`❌ Error releasing ${version}`));
       console.log(e);
@@ -46,22 +48,24 @@ export class ReleaseBot {
   }
 
   private async _commitUpdates(
-    branchName: string,
+    base: string,
+    head: string,
     version: string,
     existingBranch: boolean
   ) {
-    console.log(c.white(`🔀 Committing changes to ${branchName}\n`));
+    console.log(c.white(`🔀 Committing changes to ${head}\n`));
     const commitMessage = `feat: updating packages to tag ${version}`;
 
-    await this.git.pushingFromStage(branchName, commitMessage);
+    await this.git.pushingFromStage(head, commitMessage);
 
     if (!existingBranch) {
-      await this.git.createPullRequest({
-        base: 'master',
-        head: branchName,
-        title: `feat: updating sdk to ${version}`,
-        body: `✨ This PR updates the SDK to tag ${version}`,
-      });
+      // @TODO: Re-enable it again, it will start to open PRs to master
+      // await this.git.createPullRequest({
+      //   base,
+      //   head,
+      //   title: `feat: updating sdk to ${version}`,
+      //   body: `✨ This PR updates the SDK to tag ${version}`,
+      // });
     }
   }
 

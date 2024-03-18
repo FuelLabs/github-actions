@@ -5,6 +5,9 @@ inputs:
   repository:
     description: "Github Repository"
     default: ${{ github.repository }}
+  branch:
+    description: "Branch name"
+    default: main
   npm-tag:
     description: "NPM tag (e.g. latest or next)"
     default: latest
