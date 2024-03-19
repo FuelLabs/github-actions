@@ -11,6 +11,10 @@ export class Github {
     return stdout;
   }
 
+  async checkoutBranch(branchName: string) {
+    await $`git checkout ${branchName}`;
+  }
+
   async createBranch(branchName: string): Promise<boolean> {
     let branchExists = false;
   

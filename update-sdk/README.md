@@ -7,21 +7,26 @@ A github action to update the SDK packages.
 ```yml
 - uses: FuelLabs/github-actions/update-sdk@master
   with:
-    branch: master # In case you want to use a different head branch
+    repository: ${{ github.repository }} # You can omit it 
+    branch: master # In case you want to use a different head branch (default: main)
+    npm-tag: ${{ matrix.tag }} # You might use "latest" or anything else, like a matrix strategy
+    # Remember they need to have the same tag name, otherwise it'll fail
     packages: |
       @fuels
       @fuels/react
       @fuels/connectors
-    npm-tag: ${{ matrix.tag }} # You might use "latest" or anything else, like a matrix strategy
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Inputs
 
-| Name         | Description                                                |
-| ------------ | ---------------------------------------------------------- |
-| npm-tag      | NPM tag (e.g. latest or next)                              |
+| Name         | Description                                                | Default                    |
+| ------------ | ---------------------------------------------------------- | -------------------------- |
+| repository   | Github Repository                                          | `${{ github.repository }}` |
+| branch       | The branch that will be used to create the PR              | `main`                     |
+| packages     | Packages to update (multiline input)                       | ''                         |
+| npm-tag      | NPM tag (e.g. latest or next)                              | `latest`                   |
 
 ### Outputs
 

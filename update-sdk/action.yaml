@@ -6,14 +6,14 @@ inputs:
     description: "Github Repository"
     default: ${{ github.repository }}
   branch:
-    description: "Branch name"
+    description: "The head branch that will be used to create the PR"
     default: main
-  packages:
-    description: "Packages to update"
-    required: true
   npm-tag:
     description: "NPM tag (e.g. latest or next)"
     default: latest
+  packages:
+    description: "Packages to update"
+    required: true
 
 runs:
   using: "node20"

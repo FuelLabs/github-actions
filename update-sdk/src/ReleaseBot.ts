@@ -5,26 +5,28 @@ import { PackageJson } from './PackageJson';
 
 export class ReleaseBot {
   private git!: Github;
-  private base: string;
-  private version: string;
+  private baseBranch: string;
+  private npmTag: string;
   private packages: string[];
 
-  constructor(repository: string, base: string, version: string, packages: string[]) {
-    this.version = version;
-    this.base = base;
+  constructor(repository: string, baseBranch: string, npmTag: string, packages: string[]) {
+    this.npmTag = npmTag;
+    this.baseBranch = baseBranch;
     this.packages = packages;
     this.git = new Github(repository);
   }
 
   async release() {
-    const version = this.version;
+    const npmTag = this.npmTag;
 
     try {
-      const head = this._sdkBranchName(version);
       await this.git.setupGitAgent();
-      const existingBranch = await this._newReleaseBranch(head);
+      await this.git.checkoutBranch(this.baseBranch);
+      
+      const headBranch = this._sdkBranchName(npmTag);
+      const existingBranch = await this._newReleaseBranch(headBranch);
 
-      await PackageJson.updateDependencies(version, this.packages);
+      await PackageJson.updateDependencies(npmTag, this.packages);
 
       const updatedPackages = await this.git.getUpdatedPackages();
       if (!updatedPackages.length) {
@@ -37,9 +39,9 @@ export class ReleaseBot {
         console.log(c.green(`📦 ${updatedPackage}`));
       }
 
-      await this._commitUpdates(this.base, head, version, existingBranch);
+      await this._commitUpdates(this.baseBranch, headBranch, npmTag, existingBranch);
     } catch (e) {
-      console.log(c.red(`❌ Error releasing ${version}`));
+      console.log(c.red(`❌ Error releasing ${npmTag}`));
       console.log(e);
     }
   }
@@ -50,27 +52,27 @@ export class ReleaseBot {
   }
 
   private async _commitUpdates(
-    base: string,
-    head: string,
-    version: string,
+    baseBranch: string,
+    headBranch: string,
+    npmTag: string,
     existingBranch: boolean
   ) {
-    console.log(c.white(`🔀 Committing changes to ${head}\n`));
-    const commitMessage = `feat: updating packages to tag ${version}`;
+    console.log(c.white(`🔀 Committing changes to ${headBranch}\n`));
+    const commitMessage = `feat: updating packages to tag ${npmTag}`;
 
-    await this.git.pushingFromStage(head, commitMessage);
+    await this.git.pushingFromStage(headBranch, commitMessage);
 
     if (!existingBranch) {
       await this.git.createPullRequest({
-        base,
-        head,
-        title: `feat: updating sdk to ${version}`,
-        body: `✨ This PR updates the SDK to tag ${version}`,
+        base: baseBranch,
+        head: headBranch,
+        title: `feat: updating sdk to ${npmTag}`,
+        body: `✨ This PR updates the SDK to tag ${npmTag}`,
       });
     }
   }
 
-  private _sdkBranchName(version: string) {
-    return `ci/sdk-update/${version}`;
+  private _sdkBranchName(npmTag: string) {
+    return `ci/sdk-update/${npmTag}`;
   }
 }
