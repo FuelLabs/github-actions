@@ -61,13 +61,12 @@ export class ReleaseBot {
     await this.git.pushingFromStage(head, commitMessage);
 
     if (!existingBranch) {
-      // @TODO: Re-enable it again, it will start to open PRs to master
-      // await this.git.createPullRequest({
-      //   base,
-      //   head,
-      //   title: `feat: updating sdk to ${version}`,
-      //   body: `✨ This PR updates the SDK to tag ${version}`,
-      // });
+      await this.git.createPullRequest({
+        base,
+        head,
+        title: `feat: updating sdk to ${version}`,
+        body: `✨ This PR updates the SDK to tag ${version}`,
+      });
     }
   }
 
