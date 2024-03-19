@@ -15,6 +15,8 @@ A github action to update the SDK packages.
       @fuels
       @fuels/react
       @fuels/connectors
+      # Other way to use it
+      # fuels,@fuels/react,@fuels/connectors
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -25,7 +27,7 @@ A github action to update the SDK packages.
 | ------------ | ---------------------------------------------------------- | -------------------------- |
 | repository   | Github Repository                                          | `${{ github.repository }}` |
 | branch       | The branch that will be used to create the PR              | `main`                     |
-| packages     | Packages to update (multiline input)                       | ''                         |
+| packages     | Packages to update (multiline input or comma separated)    | ''                         |
 | npm-tag      | NPM tag (e.g. latest or next)                              | `latest`                   |
 
 ### Outputs
