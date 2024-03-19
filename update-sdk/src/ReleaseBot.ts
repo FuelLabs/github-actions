@@ -28,14 +28,16 @@ export class ReleaseBot {
 
       await PackageJson.updateDependencies(npmTag, this.packages);
 
-      const updatedPackages = await this.git.getUpdatedPackages();
+      const gitStatus = await this.git.status();
+      const updatedPackages = PackageJson.getUpdatedPackages(gitStatus);
+
       if (!updatedPackages.length) {
         console.log(c.green('✅ No updated packages found'));
         return;
       }
 
       console.log(c.green('⌛️ List of updated:'));
-      for (const updatedPackage of updatedPackages.split('\n')) {
+      for (const updatedPackage of updatedPackages) {
         console.log(c.green(`📦 ${updatedPackage}`));
       }
 
