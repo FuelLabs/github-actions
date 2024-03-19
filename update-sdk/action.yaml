@@ -1,0 +1,20 @@
+name: "SDK Outdated"
+description: "Reusable workflow for update the SDK packages"
+
+inputs:
+  repository:
+    description: "Github Repository"
+    default: ${{ github.repository }}
+  branch:
+    description: "The head branch that will be used to create the PR"
+    default: main
+  npm-tag:
+    description: "NPM tag (e.g. latest or next)"
+    default: latest
+  packages:
+    description: "Packages to update"
+    required: true
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
