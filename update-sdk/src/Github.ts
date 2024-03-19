@@ -12,6 +12,7 @@ export class Github {
   }
 
   async checkoutBranch(branchName: string) {
+    await $`git fetch`;
     await $`git checkout ${branchName}`;
   }
 
