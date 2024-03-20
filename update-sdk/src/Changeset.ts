@@ -6,9 +6,6 @@ export class Changeset {
     console.log(c.white(`📝 Adding changeset for packages\n`));
     console.log(c.white(`📟 pnpm changeset add\n`));
 
-    console.log('📝 Adding changeset for packages\n');
-    console.log('📟 pnpm changeset add\n');
-
     // Manually fill the changeset interactive CLI
     return new Promise((resolve, reject) => {
       const childProcess = spawn('pnpm', ['changeset', 'add']);
