@@ -23,7 +23,7 @@ export class ReleaseBot {
     await this.git.checkoutBranch(this.baseBranch);
     
     const headBranch = this._sdkBranchName(npmTag);
-    const existingBranch = await this._newReleaseBranch(headBranch);
+    await this._newReleaseBranch(headBranch);
 
     await PackageJson.updateDependencies(npmTag, this.packages);
 
@@ -44,7 +44,7 @@ export class ReleaseBot {
       console.log(c.green(`📦 ${updatedPackage}`));
     }
 
-    const pr = await this._commitUpdates(this.baseBranch, headBranch, npmTag, existingBranch);
+    const pr = await this._commitUpdates(this.baseBranch, headBranch, npmTag);
 
     return {
       hasUpdates: true,
@@ -53,26 +53,27 @@ export class ReleaseBot {
     }
   }
 
-  private async _newReleaseBranch(branchName: string): Promise<boolean> {
+  private async _newReleaseBranch(branchName: string) {
     console.log(c.white(`🔀 Creating branch ${branchName}\n`));
-    return await this.git.createBranch(branchName);
+    await this.git.createBranch(branchName);
   }
 
   private async _commitUpdates(
     baseBranch: string,
     headBranch: string,
-    npmTag: string,
-    existingBranch: boolean
+    npmTag: string
   ): Promise<string> {
     console.log(c.white(`🔀 Committing changes to ${headBranch}\n`));
     const commitMessage = `feat: updating packages to tag ${npmTag}`;
     await this.git.pushingFromStage(headBranch, commitMessage);
 
-    if (existingBranch) {
-      return await this.git.getPullRequest({
-        base: baseBranch,
-        head: headBranch,
-      });
+    const existingPr = await this.git.getPullRequest({
+      base: baseBranch,
+      head: headBranch,
+    });
+
+    if (existingPr) {
+      return existingPr;  
     }
 
     return await this.git.createPullRequest({
