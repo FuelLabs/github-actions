@@ -53,6 +53,7 @@ export class Github {
     const prNumberRegex = /#\d+/;
     const prMatch = list.match(prNumberRegex);
     if (!prMatch) {
+      console.log(c.white(list));
       console.log(c.red(`❌ No PR found between ${head} and ${base}`));
       return '';
     }
