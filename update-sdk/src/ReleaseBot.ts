@@ -66,13 +66,14 @@ export class ReleaseBot {
     console.log(c.white(`🔀 Committing changes to ${headBranch}\n`));
     const commitMessage = `feat: updating packages to tag ${npmTag}`;
     await this.git.pushingFromStage(headBranch, commitMessage);
-
+    
     const existingPr = await this.git.getPullRequest({
       base: baseBranch,
       head: headBranch,
     });
-
+    
     if (existingPr) {
+      console.log(c.white('⏩ Skipping PR creation\n')); 
       return existingPr;  
     }
 
