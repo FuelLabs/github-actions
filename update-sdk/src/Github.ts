@@ -6,12 +6,13 @@ export class Github {
     private repository: string
   ) {}
 
-  async getUpdatedPackages() {
+  async status() {
     const { stdout } = await $`git status --porcelain=v1`;
     return stdout;
   }
 
   async checkoutBranch(branchName: string) {
+    await $`git fetch`;
     await $`git checkout ${branchName}`;
   }
 
