@@ -5,6 +5,9 @@ inputs:
   repository:
     description: "Github Repository"
     default: ${{ github.repository }}
+  changeset:
+    description: "If your repository uses changesets, set this to true"
+    default: false
   branch:
     description: "The head branch that will be used to create the PR"
     default: main
@@ -14,6 +17,14 @@ inputs:
   packages:
     description: "Packages to update"
     required: true
+
+outputs:
+  has-updates:
+    description: "If there are updates"
+  branch:
+    description: "The branch with the updated packages"
+  pr:
+    description: "The PR url with the updated packages"
 
 runs:
   using: "node20"

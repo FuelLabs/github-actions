@@ -39,6 +39,30 @@ export class Github {
     await $`git push origin ${branchName} --force`;
   }
 
+  async getPullRequest({
+    base,
+    head,
+  }: {
+    base: string;
+    head: string;
+  }): Promise<string> {
+    console.log(c.white(`📥 Looking for a PR from ${head} to ${base}`));
+    await $`gh repo set-default ${this.repository}`;
+    const { stdout: list } = await $`gh pr list --state open --base ${base} --head ${head}`;
+
+    const prNumberRegex = /\d+/;
+    const prMatch = list.match(prNumberRegex);
+    if (!prMatch) {
+      console.log(c.red(`❌ No PR found between ${head} and ${base}`));
+      return '';
+    }
+    
+    const prNumber = prMatch[0];
+    console.log(c.green(`✅ PR open found: #${prNumber}`));
+      
+    return `https://github.com/${this.repository}/pull/${prNumber}`;
+  }
+
   async createPullRequest({
     base,
     head,
@@ -49,11 +73,13 @@ export class Github {
     head: string;
     title: string;
     body: string;
-  }) {
+  }): Promise<string> {
     console.log(c.white(`📤 Pushing branch ${head}`));
     await $`gh repo set-default ${this.repository}`;
-    const { stdout } = await $`gh pr create --base ${base} --head ${head} --title ${title} --body ${body}`;
-    console.log(c.green(`✅ PR created: ${stdout}`));
+    const { stdout: pr } = await $`gh pr create --base ${base} --head ${head} --title ${title} --body ${body}`;
+    console.log(c.green(`✅ PR created: ${pr}`));
+
+    return pr;
   }
 
   async setupGitAgent() {

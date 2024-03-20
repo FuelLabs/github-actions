@@ -8,6 +8,7 @@ A github action to update the SDK packages.
 - uses: FuelLabs/github-actions/update-sdk@master
   with:
     repository: ${{ github.repository }} # You can omit it 
+    changeset: true # You can omit it if your repository doesn't use changesets
     branch: master # In case you want to use a different head branch (default: main)
     npm-tag: ${{ matrix.tag }} # You might use "latest" or anything else, like a matrix strategy
     # Remember they need to have the same tag name, otherwise it'll fail
@@ -26,13 +27,18 @@ A github action to update the SDK packages.
 | Name         | Description                                                | Default                    |
 | ------------ | ---------------------------------------------------------- | -------------------------- |
 | repository   | Github Repository                                          | `${{ github.repository }}` |
-| branch       | The branch that will be used to create the PR              | `main`                     |
+| changeset    | If your repository uses changesets, set this to true       | `false`                    |
+| branch       | The branch that will be used as base to create the PR      | `main`                     |
 | packages     | Packages to update (multiline input or comma separated)    | ''                         |
 | npm-tag      | NPM tag (e.g. latest or next)                              | `latest`                   |
 
 ### Outputs
 
-No outputs defined
+| Name         | Description                                                |
+| ------------ | ---------------------------------------------------------- |
+| has-updates  | If there are updates                                       |
+| branch       | The branch with the updated packages                       |
+| pr           | The PR url with the updated packages                       |
 
 ## License
 
