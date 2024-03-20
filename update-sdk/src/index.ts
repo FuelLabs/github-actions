@@ -11,7 +11,15 @@ async function main() {
   const packages = isMultiline ? core.getMultilineInput('packages') : inlinePackages.split(',');
 
   const bot = new ReleaseBot(repository, branch, npmTag, packages);
-  await bot.release();
+
+  try {
+    const { hasUpdates, branch, pr } = await bot.release();
+    core.setOutput('has-updates', hasUpdates);
+    core.setOutput('branch', branch);
+    core.setOutput('pr', pr);
+  } catch (e) {
+    core.setFailed((e as Error).message);
+  }
 }
 
 main();
