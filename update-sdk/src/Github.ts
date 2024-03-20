@@ -46,7 +46,7 @@ export class Github {
     base: string;
     head: string;
   }): Promise<string> {
-    console.log(c.white(`📥 Fetching PR from ${head}`));
+    console.log(c.white(`📥 Looking for a PR from ${head} to ${base}`));
     await $`gh repo set-default ${this.repository}`;
     const { stdout: list } = await $`gh pr list --state open --base ${base} --head ${head}`;
 
