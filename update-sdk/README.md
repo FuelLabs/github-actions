@@ -28,13 +28,17 @@ A github action to update the SDK packages.
 | ------------ | ---------------------------------------------------------- | -------------------------- |
 | repository   | Github Repository                                          | `${{ github.repository }}` |
 | changeset    | If your repository uses changesets, set this to true       | `false`                    |
-| branch       | The branch that will be used to create the PR              | `main`                     |
+| branch       | The branch that will be used as base to create the PR      | `main`                     |
 | packages     | Packages to update (multiline input or comma separated)    | ''                         |
 | npm-tag      | NPM tag (e.g. latest or next)                              | `latest`                   |
 
 ### Outputs
 
-No outputs defined
+| Name         | Description                                                |
+| ------------ | ---------------------------------------------------------- |
+| has-updates  | If there are updates                                       |
+| branch       | The branch with the updated packages                       |
+| pr           | The PR url with the updated packages                       |
 
 ## License
 

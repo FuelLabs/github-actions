@@ -18,6 +18,14 @@ inputs:
     description: "Packages to update"
     required: true
 
+outputs:
+  has-updates:
+    description: "If there are updates"
+  branch:
+    description: "The branch with the updated packages"
+  pr:
+    description: "The PR url with the updated packages"
+
 runs:
   using: "node20"
   main: "dist/index.js"
