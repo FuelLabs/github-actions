@@ -1,5 +1,6 @@
 import c from 'chalk';
 
+import { Changeset } from './Changeset';
 import { Github } from './Github';
 import { PackageJson } from './PackageJson';
 
@@ -44,6 +45,7 @@ export class ReleaseBot {
       console.log(c.green(`📦 ${updatedPackage}`));
     }
 
+    await Changeset.addChangeset();
     const pr = await this._commitUpdates(this.baseBranch, headBranch, npmTag);
 
     return {
