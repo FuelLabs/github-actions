@@ -50,15 +50,14 @@ export class Github {
     await $`gh repo set-default ${this.repository}`;
     const { stdout: list } = await $`gh pr list --state open --base ${base} --head ${head}`;
 
-    const prNumberRegex = /#\d+/;
+    const prNumberRegex = /\d+/;
     const prMatch = list.match(prNumberRegex);
     if (!prMatch) {
-      console.log(c.white(list));
       console.log(c.red(`❌ No PR found between ${head} and ${base}`));
       return '';
     }
     
-    const prNumber = prMatch[0].substring(1); // Remove '#' from the match
+    const prNumber = prMatch[0];
     console.log(c.green(`✅ PR open found: #${prNumber}`));
       
     return `https://github.com/${this.repository}/pull/${prNumber}`;
