@@ -45,7 +45,7 @@ export class ReleaseBot {
       console.log(c.green(`📦 ${updatedPackage}`));
     }
 
-    await Changeset.addChangeset();
+    await Changeset.addChangeset(npmTag);
     const pr = await this._commitUpdates(this.baseBranch, headBranch, npmTag);
 
     return {

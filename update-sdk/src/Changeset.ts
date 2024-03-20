@@ -2,7 +2,7 @@ import c from 'chalk';
 import { spawn } from 'child_process';
 
 export class Changeset {
-  static async addChangeset() {
+  static async addChangeset(npmTag: string) {
     console.log(c.white(`📝 Adding changeset for packages\n`));
     console.log(c.white(`📟 pnpm changeset add\n`));
 
@@ -39,7 +39,7 @@ export class Changeset {
 
       const summary = text.includes('summary for this change');
       if (summary && !hasSkippedSummary) {
-        childProcess.stdin.write('ci: update to latest fuels\n');
+        childProcess.stdin.write(`ci: update to tag ${npmTag}\n`);
         childProcess.stdin.write('\n');
         hasSkippedSummary = true;
       }
