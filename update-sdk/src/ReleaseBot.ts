@@ -6,12 +6,14 @@ import { PackageJson } from './PackageJson';
 
 export class ReleaseBot {
   private git!: Github;
-  private baseBranch: string;
   private npmTag: string;
+  private changeset: boolean;
+  private baseBranch: string;
   private packages: string[];
 
-  constructor(repository: string, baseBranch: string, npmTag: string, packages: string[]) {
+  constructor(repository: string, changeset: boolean, baseBranch: string, npmTag: string, packages: string[]) {
     this.npmTag = npmTag;
+    this.changeset = changeset;
     this.baseBranch = baseBranch;
     this.packages = packages;
     this.git = new Github(repository);
@@ -45,7 +47,9 @@ export class ReleaseBot {
       console.log(c.green(`📦 ${updatedPackage}`));
     }
 
-    await Changeset.addChangeset(npmTag);
+    if (this.changeset) {
+      await Changeset.addChangeset(npmTag);
+    }
     const pr = await this._commitUpdates(this.baseBranch, headBranch, npmTag);
 
     return {

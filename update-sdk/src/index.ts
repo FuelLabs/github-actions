@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 
 async function main() {
   const repository = core.getInput('repository');
+  const changeset = core.getInput('changeset') === 'true';
   const branch = core.getInput('branch');
   const npmTag = core.getInput('npm-tag');
 
@@ -10,7 +11,7 @@ async function main() {
   const isMultiline = inlinePackages.includes('\n');
   const packages = isMultiline ? core.getMultilineInput('packages') : inlinePackages.split(',');
 
-  const bot = new ReleaseBot(repository, branch, npmTag, packages);
+  const bot = new ReleaseBot(repository, changeset, branch, npmTag, packages);
 
   try {
     const { hasUpdates, branch, pr } = await bot.release();

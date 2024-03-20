@@ -5,6 +5,9 @@ inputs:
   repository:
     description: "Github Repository"
     default: ${{ github.repository }}
+  changeset:
+    description: "If your repository uses changesets, set this to true"
+    default: false
   branch:
     description: "The head branch that will be used to create the PR"
     default: main
