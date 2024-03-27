@@ -24,6 +24,9 @@
     },
     {
       "pattern": "^https://twitter.com"
+    },
+    {
+      "pattern": "^https://github.com/FuelLabs/devrel-requests"
     }
   ]
 }
