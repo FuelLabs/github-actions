@@ -131,7 +131,7 @@ function checkOrder(order, altSrcFolderPath = null) {
         const itemPath =
           item === "Introduction"
             ? path.join(srcPath, "index.md")
-            : path.join(srcPath, item.toLowerCase().replace(" ", "-"));
+            : path.join(srcPath, item.toLowerCase().replaceAll(" ", "-"));
 
         if (
           !fs.existsSync(itemPath) &&
@@ -142,13 +142,13 @@ function checkOrder(order, altSrcFolderPath = null) {
             let newPath = path.join(
               srcPath,
               subFolderExceptions[i],
-              item.toLowerCase().replace(" ", "-")
+              item.toLowerCase().replaceAll(" ", "-")
             );
             if (fs.existsSync(newPath)) {
               newItemPath = newPath;
               break;
             } else {
-              newPath = path.join(srcPath, subFolderExceptions[i], item.replace(" ", "-"));
+              newPath = path.join(srcPath, subFolderExceptions[i], item.replaceAll(" ", "-"));
               if (fs.existsSync(newPath)) {
                 newItemPath = newPath;
                 break;
@@ -159,7 +159,7 @@ function checkOrder(order, altSrcFolderPath = null) {
             fs.existsSync(newItemPath),
             `${item
               .toLowerCase()
-              .replace(" ", "-")} doesn't exist at ${itemPath}`
+              .replaceAll(" ", "-")} doesn't exist at ${itemPath}`
           );
         }
       });
@@ -187,8 +187,8 @@ function checkOrder(order, altSrcFolderPath = null) {
               itemPath = path.join(
                 srcPath,
                 subFolderExceptions[i],
-                key.replace(" ", "-"),
-                `/${item.replace(" ", "-")}.md`
+                key.replaceAll(" ", "-"),
+                `/${item.replaceAll(" ", "-")}.md`
               );
               if (fs.existsSync(itemPath)) {
                 fileExists = true;
