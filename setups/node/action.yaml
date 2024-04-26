@@ -3,16 +3,16 @@ name: "Setup Node.js and PNPM"
 inputs:
   node-version:
     description: "Node version"
-    default: 18.14.1
+    default: 20
   pnpm-version:
     description: "PNPM version"
-    default: latest
+    default: 9
 
 runs:
   using: "composite"
   steps:
     - name: Cache PNPM modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.local/share/pnpm/store/v3
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -20,15 +20,14 @@ runs:
           ${{ runner.os }}-pnpm
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
 
     - name: Setup PNPM
-      uses: pnpm/action-setup@v2.2.2
+      uses: pnpm/action-setup@v3
       with:
         version: ${{ inputs.pnpm-version }}
         run_install: true
       env:
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-
