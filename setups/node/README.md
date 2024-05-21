@@ -13,10 +13,11 @@ A github action to setup Node.js and PNPM
 
 ### Inputs
 
-| Name         | Description  |
-| ------------ | ------------ |
-| node-version | Node version |
-| pnpm-version | PNPM version |
+| Name           | Description    |
+| -------------- | -------------- |
+| node-version   | Node version   |
+| pnpm-version   | PNPM Version   |
+| pnpm-recursive | PNPM recursive |
 
 ### Outputs
 
