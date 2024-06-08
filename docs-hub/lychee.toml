@@ -1,0 +1,26 @@
+# Enable link caching. This can be helpful to avoid checking the same links on
+# multiple runs.
+cache = true
+
+# Discard all cached requests older than this duration.
+max_cache_age = "1d"
+
+# Comma-separated list of accepted status codes for valid links.
+accept = ["200", "206", "405"]
+
+# Exclude URLs and mail addresses from checking (supports regex).
+exclude = [
+    'localhost:',
+    '^http://[1-9]',
+    'crates\\.io',
+    'faucet-beta-5.fuel.network',
+    '-indexer.fuel-network',
+    'fuellabs.github.io/block-explorer-v2',
+    'adobe\\.com',
+    'scripts.sil.org',
+]
+
+# Exclude all private IPs from checking.
+# Equivalent to setting `exclude_private`, `exclude_link_local`, and
+# `exclude_loopback` to true.
+exclude_all_private = true
