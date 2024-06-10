@@ -10,14 +10,8 @@ accept = ["200", "206", "405"]
 
 # Exclude URLs and mail addresses from checking (supports regex).
 exclude = [
-    'localhost:',
-    '^http://[1-9]',
-    'crates\\.io',
     'faucet-beta-5.fuel.network',
-    '-indexer.fuel-network',
     'fuellabs.github.io/block-explorer-v2',
-    'adobe\\.com',
-    'scripts.sil.org',
 ]
 
 # Exclude all private IPs from checking.
