@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 18
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2.2.2
+        uses: pnpm/action-setup@v4
       - name: Run script
         run: |
             pnpm install
