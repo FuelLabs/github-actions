@@ -14,7 +14,10 @@ runs:
     - name: Cache PNPM modules
       uses: actions/cache@v3
       with:
-        path: ~/.local/share/pnpm/store/v3
+        path: |
+          ~/.local/share/pnpm/store/v3
+          ~/.pnpm-store
+          **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm
