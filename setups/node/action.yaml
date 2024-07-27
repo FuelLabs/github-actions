@@ -20,7 +20,7 @@ runs:
           **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm
+          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
