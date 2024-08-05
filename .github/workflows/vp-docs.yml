@@ -1,14 +1,5 @@
 name: "Docs Hub Check"
 
-inputs:
-  node-version:
-    description: "Node version"
-    default: 20
-
-  pnpm-version:
-    description: "PNPM version"
-    default: 9
-
 on:
   workflow_call:
     inputs:
@@ -20,6 +11,14 @@ on:
         description: "the path where the .spellcheck.yml file lives"
         required: true
         type: string
+      node-version:
+        description: "Node version"
+        default: 20
+        required: false
+      pnpm-version:
+        description: "PNPM version"
+        default: 9
+        required: false
 
 jobs: 
   spell-check:
