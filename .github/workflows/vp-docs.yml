@@ -1,5 +1,14 @@
 name: "Docs Hub Check"
 
+inputs:
+  node-version:
+    description: "Node version"
+    required: false
+
+  pnpm-version:
+    description: "PNPM version"
+    required: false
+
 on:
   workflow_call:
     inputs:
@@ -41,10 +50,12 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ inputs.node-version }}
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
+        with:
+          version: ${{ inputs.pnpm-version }}
 
       - name: Run script
         run: |
