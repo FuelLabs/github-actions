@@ -16,10 +16,7 @@ on:
         default: 20
         type: string
         required: false
-      pnpm-version:
-        description: "PNPM version"
-        type: string
-        required: false
+
 jobs: 
   spell-check:
     runs-on: ubuntu-latest
@@ -53,8 +50,6 @@ jobs:
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ inputs.pnpm-version }}
 
       - name: Run script
         run: |
