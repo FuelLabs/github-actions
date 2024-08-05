@@ -14,12 +14,13 @@ on:
       node-version:
         description: "Node version"
         default: 20
+        type: string
         required: false
       pnpm-version:
         description: "PNPM version"
         default: 9
+        type: string
         required: false
-
 jobs: 
   spell-check:
     runs-on: ubuntu-latest
