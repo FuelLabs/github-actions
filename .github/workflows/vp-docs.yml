@@ -3,11 +3,11 @@ name: "Docs Hub Check"
 inputs:
   node-version:
     description: "Node version"
-    required: false
+    default: 20
 
   pnpm-version:
     description: "PNPM version"
-    required: false
+    default: 9
 
 on:
   workflow_call:
