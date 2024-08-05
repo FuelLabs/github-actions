@@ -18,7 +18,6 @@ on:
         required: false
       pnpm-version:
         description: "PNPM version"
-        default: 9
         type: string
         required: false
 jobs: 
