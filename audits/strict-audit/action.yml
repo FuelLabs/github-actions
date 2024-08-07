@@ -1,0 +1,23 @@
+name: Strict Audit
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+      pnpm-version:
+        required: true
+        type: string
+
+jobs:
+  strict-audit:
+    name: Strict Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./setups/node
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+      - run: pnpm audit --prod
