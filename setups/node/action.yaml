@@ -17,7 +17,6 @@ runs:
         path: |
           ~/.local/share/pnpm/store/v3
           ~/.pnpm-store
-          **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-
