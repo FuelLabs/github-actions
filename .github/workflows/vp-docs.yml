@@ -11,13 +11,19 @@ on:
         description: "the path where the .spellcheck.yml file lives"
         required: true
         type: string
+      node-version:
+        description: "Node version"
+        default: 20
+        type: string
+        required: false
 
 jobs: 
   spell-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - uses: rojopolis/spellcheck-github-actions@0.34.0
         name: Spellcheck
         with:
@@ -29,18 +35,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - name: Checkout repo2
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
+
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ inputs.node-version }}
+
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
+
       - name: Run script
         run: |
             pnpm install
