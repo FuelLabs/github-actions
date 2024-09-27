@@ -7,6 +7,7 @@ const options: Options = {
   splitting: false,
   sourcemap: false,
   format: ['cjs'],
+  noExternal: ['@actions/core', '@actions/github', '@linear/sdk']
 };
 
 export default options;

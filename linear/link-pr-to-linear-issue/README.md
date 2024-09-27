@@ -28,7 +28,7 @@ Besides linking issues, the action also unlinks issues from PRs for cases where 
 - uses: FuelLabs/github-actions/linear/link-pr-to-linear-issue@master
   with:
     repository: ${{ github.repository }} # You can omit it 
-    pull_number: ${{ github.event.client_payload.ref }}  
+    pull_number: ${{ github.event.pull_request.number }} 
     linear_api_key: ${{ secrets.LINEAR_TOKEN }}
     github_token: ${{ secrets.REPO_TOKEN }}
 ```
