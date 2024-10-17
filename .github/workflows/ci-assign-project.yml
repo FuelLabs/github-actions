@@ -15,7 +15,7 @@ jobs:
     outputs:
       changed: ${{ steps.changed-assign-project.outputs.any_changed }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Change assign project
         id: changed-assign-project
         uses: tj-actions/changed-files@v22.2
@@ -30,7 +30,7 @@ jobs:
     needs: assign-project-changed
     if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./setups/node
       - run: |
           npm install
@@ -44,7 +44,7 @@ jobs:
     needs: assign-project-changed
     if: ${{ needs.assign-project-changed.outputs.changed == 'true' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./setups/node
       - name: Run tests
         run: |
