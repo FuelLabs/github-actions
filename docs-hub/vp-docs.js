@@ -10,7 +10,7 @@ const configPath = path.join(srcFolderPath, "../.vitepress/config.ts");
 
 const configFile = fs.readFileSync(configPath, "utf8");
 
-const subFolderExceptions = ["guide"];
+const subFolderExceptions = ["guide", "api"];
 
 function main() {
   checkForIndexFile(srcFolderPath);
