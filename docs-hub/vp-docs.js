@@ -7,10 +7,12 @@ const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
 const configPath = path.join(srcFolderPath, "../.vitepress/config.ts");
+const apiOrderPath = path.join(srcFolderPath, "../.typedoc/api-links.json");
 
 const configFile = fs.readFileSync(configPath, "utf8");
+const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
 
-const subFolderExceptions = ["guide"];
+const subFolderExceptions = ["guide", "api"];
 
 function main() {
   checkForIndexFile(srcFolderPath);
@@ -77,6 +79,7 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
   const fileNames = fs.readdirSync(srcFolderPath);
   fileNames.forEach((file) => {
     if (
+      file !== "api" &&
       file !== "public" &&
       file !== "index.md" &&
       (file.endsWith("md") || file.split(".").length === 1)
@@ -91,6 +94,29 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
     const folderPath = path.join(srcFolderPath, folder);
     const subfolderNames = fs.readdirSync(folderPath);
     const parentFolder = folderPath.split("/").pop();
+    subfolderNames.forEach((subFile) => {
+      if (parentFolder !== "api") {
+        const actualPath = `${parentFolder}/${
+          subFile === "index.md" ? "" : subFile
+        }`;
+        assert(
+          configFile.includes(actualPath),
+          `${actualPath} missing in the nav config`
+        );
+        const fullPath = path.join(srcFolderPath, actualPath);
+        if (fs.statSync(fullPath).isDirectory()) {
+          const subFolderFiles = fs.readdirSync(fullPath);
+          subFolderFiles.forEach((file) => {
+            if (file !== "index.md") {
+              assert(
+                configFile.includes(file.replace(".md", "")),
+                `${file} missing in the nav config`
+              );
+            }
+          });
+        }
+      }
+    });
   });
 }
 
@@ -173,7 +199,7 @@ function checkOrder(order, altSrcFolderPath = null) {
         }
         assert(
           fileExists,
-          `${item} doesn't exist. The file name must match the title in the nav config.`
+          `${item} doesn't exist. The file name must match the title in the nav config. If this file is in the API folder, something went wrong.`
         );
       });
     }
@@ -181,6 +207,7 @@ function checkOrder(order, altSrcFolderPath = null) {
 }
 
 function extractData(inputString) {
+  // used for api.json order
   const regex = /"([^"]+)":\s*"([^"]+)"/g;
   const match = regex.exec(inputString);
   if (match !== null) {
@@ -235,6 +262,23 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
         newVPOrder.menu.push(linkName);
       }
     }
+  } else if (trimmedLine.startsWith("apiLinks")) {
+    // handle API order
+    newVPOrder.menu.push("API");
+    const apiJSON = JSON.parse(apiOrderFile);
+    const apiLines = JSON.stringify(apiJSON, null, 2).split(EOL);
+    apiLines.forEach((apiLine, apiIndex) => {
+      const trimmedAPILine = apiLine.trimStart();
+      const results = handleVPLine(
+        trimmedAPILine,
+        apiLines,
+        apiIndex,
+        newVPOrder,
+        category
+      );
+      category = results.category;
+      newVPOrder = results.newVPOrder;
+    });
   }
 
   return { newVPOrder, category };
