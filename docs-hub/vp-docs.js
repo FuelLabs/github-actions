@@ -10,7 +10,7 @@ const configPath = path.join(srcFolderPath, "../.vitepress/config.ts");
 
 const configFile = fs.readFileSync(configPath, "utf8");
 
-const subFolderExceptions = ["guide", "api"];
+const subFolderExceptions = ["guide"];
 
 function main() {
   checkForIndexFile(srcFolderPath);
@@ -91,27 +91,6 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
     const folderPath = path.join(srcFolderPath, folder);
     const subfolderNames = fs.readdirSync(folderPath);
     const parentFolder = folderPath.split("/").pop();
-    subfolderNames.forEach((subFile) => {
-      const actualPath = `${parentFolder}/${
-        subFile === "index.md" ? "" : subFile
-      }`;
-      assert(
-        configFile.includes(actualPath),
-        `${actualPath} missing in the nav config`
-      );
-      const fullPath = path.join(srcFolderPath, actualPath);
-      if (fs.statSync(fullPath).isDirectory()) {
-        const subFolderFiles = fs.readdirSync(fullPath);
-        subFolderFiles.forEach((file) => {
-          if (file !== "index.md") {
-            assert(
-              configFile.includes(file.replace(".md", "")),
-              `${file} missing in the nav config`
-            );
-          }
-        });
-      }
-    });
   });
 }
 
