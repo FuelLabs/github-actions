@@ -3,6 +3,9 @@ import fs from "fs";
 import { EOL } from "os";
 import path from "path";
 
+const subFolderExceptions = ["guide", "api"];
+const subFolderIgnore = ['snippets'];
+
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
@@ -11,8 +14,6 @@ const apiOrderPath = path.join(srcFolderPath, "../.typedoc/api-links.json");
 
 const configFile = fs.readFileSync(configPath, "utf8");
 const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
-
-const subFolderExceptions = ["guide", "api"];
 
 function main() {
   checkForIndexFile(srcFolderPath);
@@ -35,7 +36,8 @@ function getSubfolders(folderPath) {
     .filter(
       (item) =>
         fs.statSync(path.join(folderPath, item)).isDirectory() &&
-        item !== "public"
+        item !== "public" &&
+        !subFolderIgnore.includes(item)
     );
 }
 
@@ -79,6 +81,7 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
   const fileNames = fs.readdirSync(srcFolderPath);
   fileNames.forEach((file) => {
     if (
+      !subFolderIgnore.includes(item) &&
       file !== "api" &&
       file !== "public" &&
       file !== "index.md" &&
