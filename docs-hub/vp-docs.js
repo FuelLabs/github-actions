@@ -53,6 +53,7 @@ function getNestedFolders(subfolders, folderPath) {
 
 function checkForNestedFolders(subfolders, srcFolderPath) {
   const nestedSubfolders = getNestedFolders(subfolders, srcFolderPath);
+  console.log("Nested sub folders", nestedSubfolders)
   if (nestedSubfolders.length > 0) {
     nestedSubfolders.forEach((folder) => {
       assert(
