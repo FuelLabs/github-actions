@@ -3,6 +3,9 @@ import fs from "fs";
 import { EOL } from "os";
 import path from "path";
 
+const subFolderExceptions = ["guide", "api"];
+const ignoreFileExtensions = ['ts'];
+
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
@@ -11,8 +14,6 @@ const apiOrderPath = path.join(srcFolderPath, "../.typedoc/api-links.json");
 
 const configFile = fs.readFileSync(configPath, "utf8");
 const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
-
-const subFolderExceptions = ["guide", "api"];
 
 function main() {
   checkForIndexFile(srcFolderPath);
@@ -77,19 +78,21 @@ function checkForNestedFolders(subfolders, srcFolderPath) {
 function checkForUnusedFiles(srcFolderPath, subfolders) {
   // check if each file can be found in the config
   const fileNames = fs.readdirSync(srcFolderPath);
-  fileNames.forEach((file) => {
-    if (
-      file !== "api" &&
-      file !== "public" &&
-      file !== "index.md" &&
-      (file.endsWith("md") || file.split(".").length === 1)
-    ) {
-      assert(
-        configFile.includes(file.replace(".md", "")),
-        `${file} missing in the nav config`
-      );
-    }
-  });
+  fileNames
+    .filter((file) => !ignoreFileExtensions.includes(file.split('.').pop()))
+    .forEach((file) => {
+      if (
+        file !== "api" &&
+        file !== "public" &&
+        file !== "index.md" &&
+        (file.endsWith("md") || file.split(".").length === 1)
+      ) {
+        assert(
+          configFile.includes(file.replace(".md", "")),
+          `${file} missing in the nav config`
+        );
+      }
+    });
   subfolders.forEach((folder) => {
     const folderPath = path.join(srcFolderPath, folder);
     const subfolderNames = fs.readdirSync(folderPath);
@@ -106,14 +109,16 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
         const fullPath = path.join(srcFolderPath, actualPath);
         if (fs.statSync(fullPath).isDirectory()) {
           const subFolderFiles = fs.readdirSync(fullPath);
-          subFolderFiles.forEach((file) => {
-            if (file !== "index.md") {
-              assert(
-                configFile.includes(file.replace(".md", "")),
-                `${file} missing in the nav config`
-              );
-            }
-          });
+          subFolderFiles
+            .filter((file) => !ignoreFileExtensions.includes(file.split('.').pop()))
+            .forEach((file) => {
+              if (file !== "index.md") {
+                assert(
+                  configFile.includes(file.replace(".md", "")),
+                  `${file} missing in the nav config`
+                );
+              }
+            });
         }
       }
     });
