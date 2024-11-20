@@ -17,7 +17,7 @@ const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
 
 function main() {
   checkForIndexFile(srcFolderPath);
-  checkForNestedFolders(subfolders, srcFolderPath);
+  checkForNestedFolders(srcFolderPath, subfolders);
   const order = processVPConfig(configFile.split(EOL));
   checkOrder(order);
   checkForUnusedFiles(srcFolderPath, subfolders);
@@ -40,89 +40,80 @@ function getSubfolders(folderPath) {
     );
 }
 
-function getNestedFolders(subfolders, folderPath) {
-  return subfolders.filter((subfolder) =>
-    fs
-      .readdirSync(path.join(folderPath, subfolder))
-      .some((item) =>
-        fs.statSync(path.join(folderPath, subfolder, item)).isDirectory()
-      )
-  );
+function getNestedFiles(rootDirPath, subFolderNames = ['']) {
+  const results = [];
+
+  function traverseDirectory(rootDir, depth = 0) {
+    try {
+      const items = fs.readdirSync(rootDir);
+
+      for (const item of items) {
+        const fullPath = path.join(rootDir, item);
+        const relativePath = path.relative(srcFolderPath, fullPath);
+        const stats = fs.statSync(fullPath);
+
+        const fileInfo = {
+          name: item,
+          relativePath,
+          path: fullPath,
+          depth,
+          isDirectory: stats.isDirectory(),
+          extension: path.extname(item).slice(1),
+        };
+
+        results.push(fileInfo);
+
+        // Recursively process directories
+        if (stats.isDirectory()) {
+          traverseDirectory(fullPath, depth + 1);
+        }
+      }
+    } catch (error) {
+      console.error(`Error traversing directory ${rootDirPath}`, error.message);
+    }
+  }
+
+  for (const subFolderName of subFolderNames) {
+    traverseDirectory(path.join(rootDirPath, subFolderName));
+  }
+  return results;
 }
 
-function checkForNestedFolders(subfolders, srcFolderPath) {
-  const nestedSubfolders = getNestedFolders(subfolders, srcFolderPath);
-  if (nestedSubfolders.length > 0) {
-    nestedSubfolders.forEach((folder) => {
-      assert(
-        subFolderExceptions.includes(folder),
-        `cannot have nested subfolders except for in ${subFolderExceptions
-          .map((folder) => folder)
-          .join(", ")}`
-      );
-      const subSubFolderPath = path.join(srcFolderPath, folder);
-      const subSubFolders = getSubfolders(subSubFolderPath);
-      const nestedSubSubFolders = getNestedFolders(
-        subSubFolders,
-        subSubFolderPath
-      );
-      assert.deepStrictEqual(
-        nestedSubSubFolders.length,
-        0,
-        `cannot have nested folders inside ${folder}`
-      );
-    });
+function checkForNestedFolders(srcFolderPath, subfolders) {
+  const nestedItems = getNestedFiles(srcFolderPath, subfolders);
+
+  // Check expected exceptions
+  const nestedFolderExceptions = subFolderExceptions.map((name) => path.join(srcFolderPath, name));
+  const allowedNestedItems = nestedItems.filter(
+    (item) => !ignoreFileExtensions.includes(item.extension)
+  );
+
+  for (const item of allowedNestedItems) {
+    const isNestedException = nestedFolderExceptions.some((exception) =>
+      item.path.startsWith(exception)
+    );
+
+    if (isNestedException) {
+      assert(item.depth <= 1, `The item "${item.relativePath}" can not be nested.`);
+    } else {
+      assert(item.depth > 0, `The item "${item.relativePath}" can not be nested.`);
+    }
   }
 }
 
 function checkForUnusedFiles(srcFolderPath, subfolders) {
-  // check if each file can be found in the config
-  const fileNames = fs.readdirSync(srcFolderPath);
-  fileNames
-    .filter((file) => !ignoreFileExtensions.includes(file.split('.').pop()))
-    .forEach((file) => {
-      if (
-        file !== "api" &&
-        file !== "public" &&
-        file !== "index.md" &&
-        (file.endsWith("md") || file.split(".").length === 1)
-      ) {
-        assert(
-          configFile.includes(file.replace(".md", "")),
-          `${file} missing in the nav config`
-        );
-      }
-    });
-  subfolders.forEach((folder) => {
-    const folderPath = path.join(srcFolderPath, folder);
-    const subfolderNames = fs.readdirSync(folderPath);
-    const parentFolder = folderPath.split("/").pop();
-    subfolderNames.forEach((subFile) => {
-      if (parentFolder !== "api") {
-        const actualPath = `${parentFolder}/${
-          subFile === "index.md" ? "" : subFile
-        }`;
-        assert(
-          configFile.includes(actualPath),
-          `${actualPath} missing in the nav config`
-        );
-        const fullPath = path.join(srcFolderPath, actualPath);
-        if (fs.statSync(fullPath).isDirectory()) {
-          const subFolderFiles = fs.readdirSync(fullPath);
-          subFolderFiles
-            .filter((file) => !ignoreFileExtensions.includes(file.split('.').pop()))
-            .forEach((file) => {
-              if (file !== "index.md") {
-                assert(
-                  configFile.includes(file.replace(".md", "")),
-                  `${file} missing in the nav config`
-                );
-              }
-            });
-        }
-      }
-    });
-  });
+  const nestedFiles = getNestedFiles(srcFolderPath, subfolders);
+  const allMarkdownFiles = nestedFiles
+    .filter((item) => !item.relativePath.startsWith('api'))
+    .filter((item) => !ignoreFileExtensions.includes(item.extension))
+    .filter((item) => !item.isDirectory)
+    .map((item) => `/${item.relativePath}`.replace('index.md', '').replaceAll('.md', ''));
+
+  const unusedFiles = allMarkdownFiles.filter((file) => !configFile.includes(file));
+  assert(
+    unusedFiles.length === 0,
+    `The following files are not used in the nav config: ${unusedFiles.map((file) => `"${file}"`).join(', ')}`
+  );
 }
 
 function checkOrder(order, altSrcFolderPath = null) {
