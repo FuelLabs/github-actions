@@ -4,7 +4,7 @@ import { EOL } from "os";
 import path from "path";
 
 const subFolderExceptions = ["guide", "api", 'typegend'];
-const ignoreFileExtensions = ['ts', 'json'];
+const ignoreFileExtensions = ['ts', 'json', 'jsonc'];
 
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
@@ -84,11 +84,11 @@ function checkForNestedFolders(srcFolderPath, subfolders) {
 
   // Check expected exceptions
   const nestedFolderExceptions = subFolderExceptions.map((name) => path.join(srcFolderPath, name));
-  const allowedNestedItems = nestedItems.filter(
-    (item) => !ignoreFileExtensions.includes(item.extension)
+  const nestedMarkdownFiles = nestedItems.filter(
+    (item) => !ignoreFileExtensions.includes(item.extension) && !item.isDirectory
   );
 
-  for (const item of allowedNestedItems) {
+  for (const item of nestedMarkdownFiles) {
     const isNestedException = nestedFolderExceptions.some((exception) =>
       item.path.startsWith(exception)
     );
@@ -120,31 +120,28 @@ function checkOrder(order, altSrcFolderPath = null) {
   const srcPath = altSrcFolderPath || srcFolderPath;
   Object.keys(order).forEach((key) => {
     const menuOrder = order[key];
-    if (key === "menu") {
+    if (key === 'menu') {
       // check if each line in the menu corresponds to
       // an existing top-level file or the name of the folder
       menuOrder.forEach((item) => {
         const itemPath =
-          item === "Introduction"
-            ? path.join(srcPath, "index.md")
-            : path.join(srcPath, item.toLowerCase().replaceAll(" ", "-"));
+          item === 'Introduction'
+            ? path.join(srcPath, 'index.md')
+            : path.join(srcPath, item.toLowerCase().replaceAll(' ', '-'));
 
-        if (
-          !fs.existsSync(itemPath) &&
-          !fs.existsSync(itemPath.concat(".md"))
-        ) {
+        if (!fs.existsSync(itemPath) && !fs.existsSync(itemPath.concat('.md'))) {
           let newItemPath;
           for (let i = 0; i < subFolderExceptions.length; i++) {
             let newPath = path.join(
               srcPath,
               subFolderExceptions[i],
-              item.toLowerCase().replaceAll(" ", "-")
+              item.toLowerCase().replaceAll(' ', '-')
             );
             if (fs.existsSync(newPath)) {
               newItemPath = newPath;
               break;
             } else {
-              newPath = path.join(srcPath, subFolderExceptions[i], item.replaceAll(" ", "-"));
+              newPath = path.join(srcPath, subFolderExceptions[i], item.replaceAll(' ', '-'));
               if (fs.existsSync(newPath)) {
                 newItemPath = newPath;
                 break;
@@ -153,29 +150,22 @@ function checkOrder(order, altSrcFolderPath = null) {
           }
           assert(
             fs.existsSync(newItemPath),
-            `${item
-              .toLowerCase()
-              .replaceAll(" ", "-")} doesn't exist at ${itemPath}`
+            `${item.toLowerCase().replaceAll(' ', '-')} doesn't exist at ${itemPath}`
           );
         }
       });
     } else {
-      const thisKey = key.replaceAll(" ", "-").toLowerCase();
+      const thisKey = key.replaceAll(' ', '-').toLowerCase();
       // check if item exists in the right folder
       menuOrder.forEach((item) => {
         let fileExists = false;
-        const newItem = item.replaceAll(" ", "-").toLowerCase();
+        const newItem = item.replaceAll(' ', '-').toLowerCase();
         let itemPath = path.join(srcPath, thisKey, `/${newItem}.md`);
         if (fs.existsSync(itemPath)) {
           fileExists = true;
         } else {
           for (let i = 0; i < subFolderExceptions.length; i++) {
-            itemPath = path.join(
-              srcPath,
-              subFolderExceptions[i],
-              thisKey,
-              `/${newItem}.md`
-            );
+            itemPath = path.join(srcPath, subFolderExceptions[i], thisKey, `/${newItem}.md`);
             if (fs.existsSync(itemPath)) {
               fileExists = true;
               break;
@@ -183,8 +173,8 @@ function checkOrder(order, altSrcFolderPath = null) {
               itemPath = path.join(
                 srcPath,
                 subFolderExceptions[i],
-                key.replaceAll(" ", "-"),
-                `/${item.replaceAll(" ", "-")}.md`
+                key.replaceAll(' ', '-'),
+                `/${item.replaceAll(' ', '-')}.md`
               );
               if (fs.existsSync(itemPath)) {
                 fileExists = true;
@@ -217,12 +207,9 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
   // Create a shallow copy
   let newVPOrder = JSON.parse(JSON.stringify(thisOrder));
   let category = thisCat;
-  if (
-    trimmedLine.includes("collapsed:") ||
-    trimmedLine.includes('"collapsed":')
-  ) {
+  if (trimmedLine.includes('collapsed:') || trimmedLine.includes('"collapsed":')) {
     // handle categories
-    if (trimmedLine.includes("collapsed:")) {
+    if (trimmedLine.includes('collapsed:')) {
       const matches = regex.exec(lines[index - 2]);
       category = matches[1];
     } else {
@@ -232,8 +219,8 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
     newVPOrder[category] = [];
   } else if (
     // handle items
-    trimmedLine.includes("text") &&
-    !lines[index + 2].includes("collapsed:") &&
+    trimmedLine.includes('text') &&
+    !lines[index + 2].includes('collapsed:') &&
     !lines[index + 2].includes('"collapsed":')
   ) {
     const matches = regex.exec(trimmedLine);
@@ -248,30 +235,24 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
       link = extractData(lines[index + 1].trimStart());
     }
     if (link && linkName) {
-      if (link.startsWith("/")) {
-        link = link.replace("/", "");
+      if (link.startsWith('/')) {
+        link = link.replace('/', '');
       }
-      const split = link.split("/");
-      if (category && split.length !== 2 && split[1] !== "") {
+      const split = link.split('/');
+      if (category && split.length !== 2 && split[1] !== '') {
         newVPOrder[category].push(linkName);
       } else {
         newVPOrder.menu.push(linkName);
       }
     }
-  } else if (trimmedLine.startsWith("apiLinks")) {
+  } else if (trimmedLine.startsWith('apiLinks')) {
     // handle API order
-    newVPOrder.menu.push("API");
+    newVPOrder.menu.push('API');
     const apiJSON = JSON.parse(apiOrderFile);
     const apiLines = JSON.stringify(apiJSON, null, 2).split(EOL);
     apiLines.forEach((apiLine, apiIndex) => {
       const trimmedAPILine = apiLine.trimStart();
-      const results = handleVPLine(
-        trimmedAPILine,
-        apiLines,
-        apiIndex,
-        newVPOrder,
-        category
-      );
+      const results = handleVPLine(trimmedAPILine, apiLines, apiIndex, newVPOrder, category);
       category = results.category;
       newVPOrder = results.newVPOrder;
     });
@@ -296,7 +277,7 @@ function processVPConfig(lines) {
       );
       tsOrder = newVPOrder;
       currentCategory = category;
-    } else if (trimmedLine === "sidebar: [") {
+    } else if (trimmedLine === 'sidebar: [') {
       foundStart = true;
     }
   });
