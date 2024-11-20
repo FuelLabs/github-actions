@@ -4,7 +4,7 @@ import { EOL } from "os";
 import path from "path";
 
 const subFolderExceptions = ["guide", "api", 'typegend'];
-const ignoreFileExtensions = ['ts', 'json'];
+const ignoreFileExtensions = ['ts', 'json', 'jsonc'];
 
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
@@ -84,11 +84,11 @@ function checkForNestedFolders(srcFolderPath, subfolders) {
 
   // Check expected exceptions
   const nestedFolderExceptions = subFolderExceptions.map((name) => path.join(srcFolderPath, name));
-  const allowedNestedItems = nestedItems.filter(
-    (item) => !ignoreFileExtensions.includes(item.extension)
+  const nestedMarkdownFiles = nestedItems.filter(
+    (item) => !ignoreFileExtensions.includes(item.extension) && !item.isDirectory
   );
 
-  for (const item of allowedNestedItems) {
+  for (const item of nestedMarkdownFiles) {
     const isNestedException = nestedFolderExceptions.some((exception) =>
       item.path.startsWith(exception)
     );
