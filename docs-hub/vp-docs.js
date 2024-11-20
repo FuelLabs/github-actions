@@ -3,7 +3,7 @@ import fs from "fs";
 import { EOL } from "os";
 import path from "path";
 
-const subFolderExceptions = ["guide", "api"];
+const subFolderExceptions = ["guide", "api", 'typegend'];
 const ignoreFileExtensions = ['ts', 'json'];
 
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
