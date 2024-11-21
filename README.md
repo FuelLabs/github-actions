@@ -6,6 +6,7 @@ Repoistory to host all of Fuel's reusable workflows
 
 | Group                             | Description                                                      |
 | --------------------------------- | ---------------------------------------------------------------- |
+| [audit](./audits/)                | Reusable workflows for auditing npm packages                     |
 | [changeset](./changeset/)         | Reusable workflow for create changesets and release npm packages |
 | [gh-projects](./gh-projects/)     | Automating interactions between GH Projects and repositories     |
 | [setups/node](./setups/node/)     | Setup node and pnpm requirements on CI                           |

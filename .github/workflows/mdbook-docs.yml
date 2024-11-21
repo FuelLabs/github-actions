@@ -23,27 +23,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout repo2
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
       - name: Run pre-command
         if: inputs.pre-command != ''
         run: ${{ inputs.pre-command }}
-      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+      - name: Restore lychee cache
+        uses: actions/cache@v3
         with:
-          config-file: 'workflow/docs-hub/mlc.mdbook.json'
+          path: .lycheecache
+          key: cache-lychee-${{ github.ref_name }}
+          restore-keys: cache-lychee-
+      - uses: lycheeverse/lychee-action@v1
+        with:
+          args: '--config workflow/docs-hub/lychee.toml'
 
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout repo2
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
@@ -62,9 +68,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Checkout repo2
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
@@ -82,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run pre-command
         if: inputs.pre-command != ''
         run: ${{ inputs.pre-command }}

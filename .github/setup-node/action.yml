@@ -1,18 +1,46 @@
-name: 'Setup Node.js env'
+name: "Setup Node.js env"
+description: "Setup Node.js environment with PNPM and Turborepo"
 
 inputs:
   node-version:
-    description: 'Node version'
-    default: 20
+    description: "Node version"
+    default: "20"
   pnpm-version:
-    description: 'PNPM version'
-    default: 9
+    description: "PNPM version"
+    default: "9"
+  disable-turbo-cache:
+    description: "Disable Turborepo cache"
+    default: "false"
 
 runs:
   using: "composite"
   steps:
-    - name: Setup Node.js
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Cache Turborepo
+      uses: actions/cache@v4
+      if: ${{ !inputs.disable-turbo-cache }}
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-turbo-
+
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
+
+    - name: Install Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        registry-url: "https://registry.npmjs.org"
+        cache: "pnpm"
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      run: pnpm install
