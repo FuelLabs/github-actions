@@ -42,6 +42,7 @@ jobs:
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
+          ref: 'ps/chore/relative-inline-snippets'
 
       - name: Setup node
         uses: actions/setup-node@v4
