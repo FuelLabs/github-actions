@@ -14,10 +14,12 @@ runs:
     - name: Cache PNPM modules
       uses: actions/cache@v4
       with:
-        path: ~/.local/share/pnpm/store/v3
+        path: |
+          ~/.local/share/pnpm/store/v3
+          ~/.pnpm-store
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm
+          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-${{ inputs.pnpm-version }}-lock-
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -25,7 +27,7 @@ runs:
         node-version: ${{ inputs.node-version }}
 
     - name: Setup PNPM
-      uses: pnpm/action-setup@v3
+      uses: pnpm/action-setup@v4
       with:
         version: ${{ inputs.pnpm-version }}
         run_install: true

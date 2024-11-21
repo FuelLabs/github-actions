@@ -32,9 +32,15 @@ jobs:
       - name: Run pre-command
         if: inputs.pre-command != ''
         run: ${{ inputs.pre-command }}
-      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.12
+      - name: Restore lychee cache
+        uses: actions/cache@v3
         with:
-          config-file: 'workflow/docs-hub/mlc.mdbook.json'
+          path: .lycheecache
+          key: cache-lychee-${{ github.ref_name }}
+          restore-keys: cache-lychee-
+      - uses: lycheeverse/lychee-action@v1
+        with:
+          args: '--config workflow/docs-hub/lychee.toml'
 
   markdown-lint:
     name: Markdown Lint
