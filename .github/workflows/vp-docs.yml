@@ -42,7 +42,6 @@ jobs:
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
-          ref: 'db/chore/remove-ts-api-doc-validation'
 
       - name: Setup node
         uses: actions/setup-node@v4
