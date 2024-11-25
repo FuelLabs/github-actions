@@ -3,17 +3,15 @@ import fs from "fs";
 import { EOL } from "os";
 import path from "path";
 
-const subFolderExceptions = ["guide", "api", 'typegend'];
+const subFolderExceptions = ["guide", 'typegend'];
 const ignoreFileExtensions = ['ts', 'json', 'jsonc'];
 
 const srcFolderPath = path.join(process.cwd(), `../../${process.argv[2]}`);
 const subfolders = getSubfolders(srcFolderPath);
 
 const configPath = path.join(srcFolderPath, "../.vitepress/config.ts");
-const apiOrderPath = path.join(srcFolderPath, "../.typedoc/api-links.json");
 
 const configFile = fs.readFileSync(configPath, "utf8");
-const apiOrderFile = fs.readFileSync(apiOrderPath, "utf8");
 
 function main() {
   checkForIndexFile(srcFolderPath);
@@ -258,23 +256,6 @@ function handleVPLine(trimmedLine, lines, index, thisOrder, thisCat) {
         newVPOrder.menu.push(linkName);
       }
     }
-  } else if (trimmedLine.startsWith("apiLinks")) {
-    // handle API order
-    newVPOrder.menu.push("API");
-    const apiJSON = JSON.parse(apiOrderFile);
-    const apiLines = JSON.stringify(apiJSON, null, 2).split(EOL);
-    apiLines.forEach((apiLine, apiIndex) => {
-      const trimmedAPILine = apiLine.trimStart();
-      const results = handleVPLine(
-        trimmedAPILine,
-        apiLines,
-        apiIndex,
-        newVPOrder,
-        category
-      );
-      category = results.category;
-      newVPOrder = results.newVPOrder;
-    });
   }
 
   return { newVPOrder, category };

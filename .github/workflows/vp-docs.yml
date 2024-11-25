@@ -55,7 +55,5 @@ jobs:
         run: |
             pnpm install
             pnpm build
-            cd apps/docs
-            pnpm typedoc && pnpm tsx ./scripts/typedoc-postbuild.ts
-            cd ../../workflow/docs-hub
+            cd workflow/docs-hub
             node vp-docs.js ${{ inputs.doc-folder-path }} 
