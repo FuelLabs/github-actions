@@ -42,6 +42,7 @@ jobs:
         with: 
           repository: 'FuelLabs/github-actions'
           path: 'workflow'
+          ref: 'db/chore/remove-ts-api-doc-validation'
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -55,7 +56,5 @@ jobs:
         run: |
             pnpm install
             pnpm build
-            cd apps/docs
-            pnpm typedoc && pnpm tsx ./scripts/typedoc-postbuild.ts
-            cd ../../workflow/docs-hub
+            cd workflow/docs-hub
             node vp-docs.js ${{ inputs.doc-folder-path }} 
