@@ -3,7 +3,7 @@ import type { Options } from 'tsup';
 const options: Options = {
   entry: ['src/index.ts'],
   outDir: 'dist',
-  minify: true,
+  minify: false,
   splitting: false,
   sourcemap: false,
   format: ['cjs'],
