@@ -69,14 +69,15 @@ function checkForNestedFolders(subfolders, srcFolderPath) {
         "cannot have nested subfolders"
       );
       if (folder === "plugins") {
+        // Allow plugins folder to have any subdirectories
         const pluginsPath = path.join(srcFolderPath, folder);
         const pluginSubFolders = fs
           .readdirSync(pluginsPath)
           .filter((item) =>
             fs.statSync(path.join(srcFolderPath, folder, item)).isDirectory()
           );
-        assert.deepStrictEqual(pluginSubFolders.length, 1);
-        assert.deepStrictEqual(pluginSubFolders[0], "forc_client");
+        // Ensure plugins folder is not empty
+        assert(pluginSubFolders.length > 0, "plugins folder must have at least one subdirectory");
       }
     });
   }
@@ -112,11 +113,12 @@ function checkForUnusedFiles(srcFolderPath, subfolders) {
     const subfolderNames = fs.readdirSync(folderPath);
     const parentFolder = folderPath.split("/").pop();
     subfolderNames.forEach((subFile) => {
-      if(subFile === 'forc_client'){
-        const forcClientPath = path.join(folderPath, subFile);
-        const forcClientSubfolderNames = fs.readdirSync(forcClientPath);
-        forcClientSubfolderNames.forEach((forcClientSubFile) => {
-          const actualPath = `${subFile}/${forcClientSubFile}`;
+      const subFilePath = path.join(folderPath, subFile);
+      // Check if it's a directory that might have nested files
+      if(fs.statSync(subFilePath).isDirectory()){
+        const nestedFiles = fs.readdirSync(subFilePath);
+        nestedFiles.forEach((nestedFile) => {
+          const actualPath = `${subFile}/${nestedFile}`;
           assert(
             summaryContent.includes(actualPath),
             `${actualPath} missing in SUMMARY.md`
@@ -178,13 +180,20 @@ function checkOrder(order, altSrcFolderPath = null) {
               fileExists = true;
               break;
             } else {
-              itemPath = path.join(
-                srcPath,
-                `${key !== "forc" ? `${key}/forc_client/` : "/"}${item}.md`
-              );
-              if (fs.existsSync(itemPath)) {
-                fileExists = true;
-                break;
+              // Search for file in nested subdirectories
+              // When key is "forc", srcPath already points to the forc directory
+              // For other keys, append the key to srcPath to get the parent directory
+              const parentPath = key !== "forc" ? path.join(srcPath, key) : srcPath;
+              if (fs.existsSync(parentPath)) {
+                const subdirs = fs.readdirSync(parentPath)
+                  .filter(dir => fs.statSync(path.join(parentPath, dir)).isDirectory());
+                for (const subdir of subdirs) {
+                  itemPath = path.join(parentPath, subdir, `${item}.md`);
+                  if (fs.existsSync(itemPath)) {
+                    fileExists = true;
+                    break;
+                  }
+                }
               }
             }
           }
