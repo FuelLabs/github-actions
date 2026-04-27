@@ -2,8 +2,10 @@
 # Pin: uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@<ref>
 #
 # Composites must use remote uses: (not ./) — the job workspace is the caller’s repo, so
-# actions/checkout is the caller, not this repo. Bump GITHUB_ACTIONS_REF on each
-# tag release; keep it in sync with the @ref you call this workflow with.
+# actions/checkout is the caller, not this repo. The composite ref below must be a
+# **literal** (not env — env is not allowed in `uses:`). On release, set it to the same
+# tag you publish (e.g. @v1.0.0) before tagging, so consumers pinning this workflow get a
+# matching composite. Default branch: @master.
 name: Reusable — Docker build and push
 
 on:
@@ -84,11 +86,6 @@ on:
         description: docker/build-push-action metadata JSON
         value: ${{ jobs.docker.outputs.metadata }}
 
-# Ref for remote composite `uses` (must not be ./ — caller’s checkout is the consumer repo)
-env:
-  # Bump when tagging this repo; keep in sync with the @ref on workflow_call
-  GITHUB_ACTIONS_REF: master
-
 jobs:
   docker:
     runs-on: ${{ inputs.runs-on }}
@@ -105,7 +102,7 @@ jobs:
 
       - name: Build and push
         id: build
-        uses: FuelLabs/github-actions/.github/actions/docker-build-push@${{ env.GITHUB_ACTIONS_REF }}
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         with:
           auth-mode: ${{ inputs.auth-mode }}
           aws-role-arn: ${{ inputs.aws-role-arn }}

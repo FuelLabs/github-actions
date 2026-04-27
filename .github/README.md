@@ -17,13 +17,13 @@ This file documents the **OCI / Docker / Helm** composites and their callable wo
 
 **Not in scope for these composites:** PR-only Helm, `helm-cleanup-pr`, preview charts.
 
+**Related (same repo, different path style):** [`setups/docker`](../setups/docker/) is a small composite for **GHCR login and compose**; use the table above for **build + push** or **Helm OCI**.
+
 ## How callable workflows resolve composites
 
-Callers’ jobs check out the **consumer** repository. A reusable workflow in **this** repo must **not** use `./.github/actions/...` — that path would resolve in the **caller**, not here. The workflows set **`env.GITHUB_ACTIONS_REF`** and use:
+Callers’ jobs check out the **consumer** repository. A reusable workflow in **this** repo must **not** use `./.github/actions/...` — that path would resolve in the **caller**, not here. Composite steps use a **fully qualified** `uses: FuelLabs/github-actions/.github/actions/<name>@<ref>`, where **`<ref>` is a string literal in the workflow file** (e.g. `@master`). GitHub does **not** allow the `env` context in a step’s `uses:` (runtime error: `Unrecognized named-value: 'env'`). Do not use `...@${{ env.… }}`.
 
-`FuelLabs/github-actions/.github/actions/<name>@${{ env.GITHUB_ACTIONS_REF }}`
-
-**Releases:** set `GITHUB_ACTIONS_REF` in **both** `docker-build-push.yml` and `helm-publish-oci.yml` to the **same** tag/SHA you publish (e.g. `v1.0.0`); pin consumer `uses: .../docker-build-push.yml@v1.0.0` to match. On the default branch it may be `master` for development.
+**Releases:** in `docker-build-push.yml` and `helm-publish-oci.yml`, set the `...@<ref>` on the composite to the **same** tag/SHA you are about to publish (e.g. `...@v1.0.0` on the commit you tag). Default branch can keep `...@master` for development. Consumers who pin `uses: .../docker-build-push.yml@v1.0.0` get the workflow and composite at that ref together.
 
 ## Secrets
 

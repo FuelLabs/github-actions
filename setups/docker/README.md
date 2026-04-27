@@ -1,4 +1,4 @@
-### Setup node
+### Setup docker
 
 A github action to setup Docker
 

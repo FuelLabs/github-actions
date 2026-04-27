@@ -120,7 +120,7 @@ runs:
             printf '%s\n' "$INPUT_TAGS"
           else
             printf '%s\n' 'type=sha,prefix='
-            printf '%s\n' "type=raw,value=sha-{{sha}}-{{date 'YYYYMMDDhhmmss'}}"
+            printf '%s\n' "type=raw,value=sha-{{sha}}-{{date 'YYYYMMDDHHmmss'}}"
           fi
           echo "$delim"
         } >> "$GITHUB_OUTPUT"

@@ -12,15 +12,18 @@ Repository for Fuel’s reusable **workflows** and **composite** actions (public
 
 ## Other groups
 
-| Group                             | Description                                                      |
-| --------------------------------- | ---------------------------------------------------------------- |
-| [audit](./audits/)                | Reusable workflows for auditing npm packages                     |
-| [changeset](./changeset/)         | Reusable workflow for create changesets and release npm packages |
-| [gh-projects](./gh-projects/)     | Automating interactions between GH Projects and repositories     |
-| [setups/node](./setups/node/)     | Setup node and pnpm requirements on CI                           |
-| [setups/docker](./setups/docker/) | Setup docker and docker compose on CI                            |
-| [setups/npm](./setups/npm/)       | Setup npm deployment requirements on CI                          |
-| [update-sdk](./update-sdk/)       | Reusable workflow for update the SDK packages                    |
+Root-level actions use **`uses: FuelLabs/github-actions/<folder>/...`** and a colocated **README** in each folder. **OCI (Docker / Helm) stacks** are different: composites live under [`.github/actions/`](.github/actions/) and are documented in [`.github/README.md`](.github/README.md) (callable workflows, cross-repo `uses:` with **literal** composite `@ref`, not `env`); that split exists so Docker/Helm can share one doc with **ECR, Warp, and OCI** patterns.
+
+| Group                              | Description                                                      |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| [`.github/README.md`](.github/README.md) | **Docker, Helm, Slack** composites and `workflow_call` wrappers (see OCI block above) |
+| [audit](./audits/)                 | Reusable workflows for auditing npm packages                     |
+| [changeset](./changeset/)          | Reusable workflow for create changesets and release npm packages  |
+| [gh-projects](./gh-projects/)      | Automating interactions between GH Projects and repositories     |
+| [setups/node](./setups/node/)      | Setup node and pnpm requirements on CI                            |
+| [setups/docker](./setups/docker/)  | **GHCR login** / docker compose (lightweight; not a full build+push) |
+| [setups/npm](./setups/npm/)        | Setup npm deployment requirements on CI                          |
+| [update-sdk](./update-sdk/)        | Reusable workflow for update the SDK packages                    |
 
 ## License
 
