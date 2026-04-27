@@ -1,0 +1,125 @@
+# Callable reusable workflow — Docker build & push (FuelLabs/github-actions).
+# Pin: uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@<ref>
+#
+# Composites must use remote uses: (not ./) — the job workspace is the caller’s repo, so
+# actions/checkout is the caller, not this repo. Bump GITHUB_ACTIONS_REF on each
+# tag release; keep it in sync with the @ref you call this workflow with.
+name: Reusable — Docker build and push
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        type: string
+        description: GitHub-hosted runner label for the job
+        default: ubuntu-latest
+      platforms:
+        type: string
+        description: Comma-separated platforms (e.g. linux/amd64,linux/arm64)
+        default: linux/amd64
+      build-backend:
+        type: string
+        description: 'buildx | warp (Warp only for existing adopters or approved repos)'
+        default: buildx
+      auth-mode:
+        type: string
+        description: 'ecr-oidc | registry-login'
+        required: true
+      aws-role-arn:
+        type: string
+        description: IAM role for ECR OIDC (required when auth-mode is ecr-oidc)
+        required: false
+      aws-region:
+        type: string
+        default: us-east-1
+      registry:
+        type: string
+        description: Registry host when using registry-login
+        default: ghcr.io
+      docker-context:
+        type: string
+        default: .
+      dockerfile:
+        type: string
+        required: true
+      image:
+        type: string
+        required: true
+      tags:
+        type: string
+        description: Optional multiline docker/metadata-action tag rules (see .github/README.md)
+        required: false
+      flavor:
+        type: string
+        description: Optional docker/metadata-action flavor (e.g. latest=auto)
+        required: false
+        default: ''
+      labels:
+        type: string
+        description: Optional docker/metadata-action custom labels (multiline)
+        required: false
+        default: ''
+      build-args:
+        type: string
+        required: false
+      profile-name:
+        type: string
+        description: Warp profile (required when build-backend is warp for Fuel projects)
+        required: false
+    secrets:
+      REGISTRY_USERNAME:
+        description: Username for registry-login (omit for pure ECR OIDC)
+        required: false
+      REGISTRY_PASSWORD:
+        description: Password or PAT for registry-login
+        required: false
+    outputs:
+      image:
+        description: Published image reference
+        value: ${{ jobs.docker.outputs.image }}
+      digest:
+        description: Image digest
+        value: ${{ jobs.docker.outputs.digest }}
+      metadata:
+        description: docker/build-push-action metadata JSON
+        value: ${{ jobs.docker.outputs.metadata }}
+
+# Ref for remote composite `uses` (must not be ./ — caller’s checkout is the consumer repo)
+env:
+  # Bump when tagging this repo; keep in sync with the @ref on workflow_call
+  GITHUB_ACTIONS_REF: master
+
+jobs:
+  docker:
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+      metadata: ${{ steps.build.outputs.metadata }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push
+        id: build
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@${{ env.GITHUB_ACTIONS_REF }}
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          context: ${{ inputs.docker-context }}
+          dockerfile: ${{ inputs.dockerfile }}
+          build-args: ${{ inputs.build-args }}
+          platforms: ${{ inputs.platforms }}
+          build-backend: ${{ inputs.build-backend }}
+          profile-name: ${{ inputs.profile-name }}

@@ -1,0 +1,62 @@
+# Callable reusable workflow — Helm OCI publish (non-PR flows only).
+# Pin: uses: FuelLabs/github-actions/.github/workflows/helm-publish-oci.yml@<ref>
+#
+# Composites use remote uses: (not ./) so they resolve in github-actions, not the caller
+# repository (see docker-build-push.yml). Bump GITHUB_ACTIONS_REF on each tag release.
+name: Reusable — Helm publish (OCI)
+
+on:
+  workflow_call:
+    inputs:
+      chart-folder:
+        type: string
+        required: true
+      registry-url:
+        type: string
+        required: true
+      chart-version:
+        type: string
+        description: Optional override; otherwise Chart.yaml version is used
+        required: false
+      force:
+        type: string
+        default: 'false'
+      helm-version:
+        type: string
+        default: v3.14.4
+    secrets:
+      REGISTRY_USERNAME:
+        required: true
+      REGISTRY_ACCESS_TOKEN:
+        required: true
+    outputs:
+      chart-version:
+        description: Chart version published
+        value: ${{ jobs.helm.outputs.chart-version }}
+
+env:
+  GITHUB_ACTIONS_REF: master
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required when REGISTRY_ACCESS_TOKEN is GITHUB_TOKEN pushing to ghcr.io (Packages)
+      packages: write
+    outputs:
+      chart-version: ${{ steps.publish.outputs.chart-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish chart
+        id: publish
+        uses: FuelLabs/github-actions/.github/actions/helm-publish-oci@${{ env.GITHUB_ACTIONS_REF }}
+        with:
+          chart-folder: ${{ inputs.chart-folder }}
+          registry-url: ${{ inputs.registry-url }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          access-token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
+          chart-version: ${{ inputs.chart-version }}
+          force: ${{ inputs.force }}
+          helm-version: ${{ inputs.helm-version }}

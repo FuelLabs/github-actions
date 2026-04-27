@@ -1,0 +1,26 @@
+# Same pattern as FuelLabs/fuel-core .github/actions/slack-notify-template
+name: Notify Slack on failure
+description: Sends a Slack notification when the job fails (ravsamhq/notify-slack-action).
+
+inputs:
+  github_token:
+    description: 'GitHub token; caller passes secrets.GITHUB_TOKEN (or PAT) via with:. Composite metadata cannot use secrets.* context.'
+    required: true
+  slack_webhook:
+    description: 'Slack incoming webhook URL from caller repo/org secret — masked in logs.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Notify if job fails
+      uses: ravsamhq/notify-slack-action@v2
+      with:
+        status: ${{ job.status }}
+        token: ${{ inputs.github_token }}
+        notification_title: '{workflow} has {status_message}'
+        message_format: '{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}> : <{run_url}|View Run Results>'
+        footer: ''
+        notify_when: failure
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook }}
