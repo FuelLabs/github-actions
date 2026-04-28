@@ -253,8 +253,18 @@ jobs:
           METADATA_JSON: ${{ steps.meta.outputs.metadata }}
         run: |
           set -euo pipefail
+          shopt -s nullglob
+          manifests=()
+          for d in *; do
+            manifests+=("${IMAGE_REF}@sha256:${d}")
+          done
+          shopt -u nullglob
+          if [ "${#manifests[@]}" -eq 0 ]; then
+            echo "No digest files found under $(pwd)" >&2
+            exit 1
+          fi
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
-            $(printf '%s@sha256:%s ' "$IMAGE_REF" *)
+            "${manifests[@]}"
 
       - name: Set image output
         id: image
