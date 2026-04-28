@@ -91,7 +91,7 @@ on:
         description: Image digest
         value: ${{ jobs.native-merge.outputs.digest || jobs.warp.outputs.digest }}
       metadata:
-        description: docker/build-push-action metadata JSON
+        description: docker/metadata-action bake JSON (stable schema across native-merge and Warp)
         value: ${{ jobs.native-merge.outputs.metadata || jobs.warp.outputs.metadata }}
 
 jobs:
