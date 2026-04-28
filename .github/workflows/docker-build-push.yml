@@ -95,8 +95,64 @@ on:
         value: ${{ jobs.native-merge.outputs.metadata || jobs.warp.outputs.metadata }}
 
 jobs:
+  native-plan:
+    if: ${{ inputs.build-backend != 'warp' }}
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - name: Build native matrix from requested platforms
+        id: plan
+        shell: bash
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+          RUNNER_AMD64: ${{ inputs.runs-on-amd64 }}
+          RUNNER_ARM64: ${{ inputs.runs-on-arm64 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          raw = os.environ.get("PLATFORMS", "")
+          runner_amd64 = os.environ.get("RUNNER_AMD64", "ubuntu-latest")
+          runner_arm64 = os.environ.get("RUNNER_ARM64", "ubuntu-24.04-arm")
+          allowed = {
+              "linux/amd64": runner_amd64,
+              "linux/arm64": runner_arm64,
+          }
+
+          requested = [p.strip() for p in raw.split(",") if p.strip()]
+          if not requested:
+              raise SystemExit("platforms input must contain at least one platform")
+
+          include = []
+          seen = set()
+          invalid = []
+          for p in requested:
+              if p not in allowed:
+                  invalid.append(p)
+                  continue
+              if p in seen:
+                  continue
+              seen.add(p)
+              include.append({"platform": p, "runner": allowed[p]})
+
+          if invalid:
+              raise SystemExit(
+                  "Unsupported platform(s): "
+                  + ", ".join(invalid)
+                  + ". Allowed: linux/amd64, linux/arm64"
+              )
+          if not include:
+              raise SystemExit("No valid platforms to build")
+
+          print(f"matrix={json.dumps({'include': include}, separators=(',', ':'))}")
+          PY
+
   native-build:
     if: ${{ inputs.build-backend != 'warp' }}
+    needs: native-plan
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
@@ -104,18 +160,12 @@ jobs:
       packages: write
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            runner: ${{ inputs.runs-on-amd64 }}
-          - platform: linux/arm64
-            runner: ${{ inputs.runs-on-arm64 }}
+      matrix: ${{ fromJSON(needs.native-plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Derive platform pair
         id: platform
-        if: contains(inputs.platforms, matrix.platform)
         shell: bash
         run: |
           platform="${{ matrix.platform }}"
@@ -123,7 +173,6 @@ jobs:
 
       - name: Build and push by digest (native)
         id: build
-        if: contains(inputs.platforms, matrix.platform)
         uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         with:
           auth-mode: ${{ inputs.auth-mode }}
@@ -145,7 +194,6 @@ jobs:
           build-args: ${{ inputs.build-args }}
 
       - name: Export digest
-        if: contains(inputs.platforms, matrix.platform)
         shell: bash
         run: |
           mkdir -p /tmp/digests
@@ -153,7 +201,6 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        if: contains(inputs.platforms, matrix.platform)
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ steps.platform.outputs.pair }}
