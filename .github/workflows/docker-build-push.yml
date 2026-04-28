@@ -85,7 +85,7 @@ on:
         required: false
     outputs:
       image:
-        description: Published image reference
+        description: Repository/image name without tag (inputs.image — stable across native-merge and Warp)
         value: ${{ jobs.native-merge.outputs.image || jobs.warp.outputs.image }}
       digest:
         description: Image digest
