@@ -191,7 +191,7 @@ runs:
         REGISTRY_URL: ${{ inputs.registry-url }}
       run: |
         set -euo pipefail
-        helm package "$CHART_FOLDER" --version "$CHART_VERSION"
+        helm package "$CHART_FOLDER" --version "$CHART_VERSION" --destination "$CHART_FOLDER"
         helm push "$CHART_FOLDER"/*.tgz "$REGISTRY_URL"
         rm -f "$CHART_FOLDER"/*.tgz
 
