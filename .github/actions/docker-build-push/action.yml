@@ -79,16 +79,16 @@ inputs:
 outputs:
   image:
     description: Image reference (from metadata)
-    value: ${{ inputs.setup-only == 'true' && '' || fromJSON(inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata)['image.name'] }}
+    value: ${{ inputs.setup-only == 'true' && '' || fromJSON(inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata))['image.name'] }}
   imageid:
     description: Image ID from build backend
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || steps.publish-buildx.outputs.imageId) }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) }}
   digest:
     description: Image digest
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || steps.publish-buildx.outputs.digest) }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) }}
   metadata:
     description: Build metadata JSON
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata) }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata)) }}
 
 runs:
   using: composite
@@ -169,7 +169,7 @@ runs:
     - name: Build and push (Buildx canonical digest)
       if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest == 'true'
       uses: docker/build-push-action@v6
-      id: publish-buildx
+      id: publish-buildx-digest
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.dockerfile }}
