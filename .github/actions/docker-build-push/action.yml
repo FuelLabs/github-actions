@@ -71,6 +71,10 @@ inputs:
     description: 'true | false. If true, only auth/login setup is performed (no metadata/build/push).'
     required: false
     default: 'false'
+  metadata-only:
+    description: 'true | false. If true, run auth/login + metadata generation only (no build/push).'
+    required: false
+    default: 'false'
   push:
     description: 'true | false'
     required: false
@@ -79,16 +83,22 @@ inputs:
 outputs:
   image:
     description: Image reference (from metadata)
-    value: ${{ inputs.setup-only == 'true' && '' || fromJSON(inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata))['image.name'] }}
+    value: ${{ inputs.setup-only == 'true' && '' || fromJSON((inputs.metadata-only == 'true' && steps.meta.outputs.json) || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata)))['image.name'] }}
   imageid:
     description: Image ID from build backend
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) }}
+    value: ${{ (inputs.setup-only == 'true' || inputs.metadata-only == 'true') && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) }}
   digest:
     description: Image digest
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) }}
+    value: ${{ (inputs.setup-only == 'true' || inputs.metadata-only == 'true') && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) }}
   metadata:
     description: Build metadata JSON
-    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata)) }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.metadata-only == 'true' && steps.meta.outputs.json) || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.metadata || steps.publish-buildx.outputs.metadata)) }}
+  tags:
+    description: docker/metadata-action computed tags list
+    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.tags }}
+  labels:
+    description: docker/metadata-action computed labels list
+    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.labels }}
 
 runs:
   using: composite
@@ -159,15 +169,15 @@ runs:
           ${{ inputs.labels }}
 
     - name: Set up QEMU (Buildx cross-arch)
-      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && (contains(inputs.platforms, ',') || contains(inputs.platforms, 'arm'))
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && (contains(inputs.platforms, ',') || contains(inputs.platforms, 'arm'))
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx'
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx'
       uses: docker/setup-buildx-action@v3
 
     - name: Build and push (Buildx canonical digest)
-      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest == 'true'
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest == 'true'
       uses: docker/build-push-action@v6
       id: publish-buildx-digest
       with:
@@ -181,7 +191,7 @@ runs:
         cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
 
     - name: Build and push (Buildx)
-      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest != 'true'
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest != 'true'
       uses: docker/build-push-action@v6
       id: publish-buildx
       with:
@@ -196,7 +206,7 @@ runs:
         cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
 
     - name: Build and push (Warp)
-      if: inputs.setup-only != 'true' && inputs.build-backend == 'warp'
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'warp'
       uses: Warpbuilds/build-push-action@v6
       id: publish-warp
       with:
