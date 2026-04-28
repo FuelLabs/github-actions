@@ -191,9 +191,17 @@ runs:
         REGISTRY_URL: ${{ inputs.registry-url }}
       run: |
         set -euo pipefail
-        helm package "$CHART_FOLDER" --version "$CHART_VERSION" --destination "$CHART_FOLDER"
-        helm push "$CHART_FOLDER"/*.tgz "$REGISTRY_URL"
-        rm -f "$CHART_FOLDER"/*.tgz
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "$tmpdir"' EXIT
+        helm package "$CHART_FOLDER" --version "$CHART_VERSION" --destination "$tmpdir"
+        shopt -s nullglob
+        pkgs=("$tmpdir"/*.tgz)
+        shopt -u nullglob
+        if [ "${#pkgs[@]}" -ne 1 ]; then
+          echo "Expected exactly one chart package in $tmpdir, got ${#pkgs[@]}" >&2
+          exit 1
+        fi
+        helm push "${pkgs[0]}" "$REGISTRY_URL"
 
     - name: Restore Chart.yaml after override
       if: inputs.chart-version != '' && always()
