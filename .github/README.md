@@ -8,10 +8,10 @@ This file documents the **OCI / Docker / Helm** composites and their callable wo
 
 | Kind | Path | Purpose |
 |------|------|---------|
-| Composite | `.github/actions/docker-build-push` | ECR OIDC or registry login; **Buildx** + QEMU, or **Warp** |
-| Composite | `.github/actions/helm-publish-oci` | Non-PR Helm **OCI** publish (lint, push) |
+| Composite | `.github/actions/docker-build-push` | ECR private/public OIDC or registry login; **Buildx** + QEMU, or **Warp** |
+| Composite | `.github/actions/helm-publish-oci` | Non-PR Helm **OCI** publish (lint, push) via registry token or AWS OIDC (ECR) |
 | Composite | `.github/actions/slack-notify-failure` | Small Slack failure step (`ravsamhq/notify-slack-action`) |
-| Reusable workflow | `.github/workflows/docker-build-push.yml` | Forwards `runs-on`, `platforms`, `build-backend`, `permissions` |
+| Reusable workflow | `.github/workflows/docker-build-push.yml` | Native per-platform runner builds + digest merge (default), or Warp direct push |
 | Reusable workflow | `.github/workflows/helm-publish-oci.yml` | Same for Helm |
 | Reusable workflow (legacy) | `.github/workflows/publish-docker-image.yml` | Same implementation as `docker-build-push` (wraps the row above) + old secret/input names + Slack on failure |
 
@@ -44,24 +44,73 @@ jobs:
     uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@v1.0.0
     secrets: inherit
     with:
-      runs-on: ubuntu-latest
       auth-mode: registry-login
       dockerfile: Dockerfile
       image: ghcr.io/fuellabs/myapp
+      build-backend: native
+      runs-on-amd64: ubuntu-latest
+      runs-on-arm64: ubuntu-24.04-arm
 ```
 
-**Callable** — Helm to GHCR (needs `packages: write` in the **called** job — the workflow already sets it; token must be `GITHUB_TOKEN` or a PAT with package write):
+**Callable** — Docker to ECR Public (OIDC):
+
+```yaml
+jobs:
+  image:
+    uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@v1.0.0
+    with:
+      auth-mode: ecr-public-oidc
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+      aws-region: us-east-1
+      dockerfile: Dockerfile
+      image: public.ecr.aws/your-alias/myapp
+      build-backend: native
+```
+
+**Callable** — Docker via Warp (no native digest merge):
+
+```yaml
+jobs:
+  image:
+    uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@v1.0.0
+    secrets: inherit
+    with:
+      auth-mode: ecr-oidc
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+      dockerfile: Dockerfile
+      image: 123.dkr.ecr.us-east-1.amazonaws.com/myapp
+      build-backend: warp
+      profile-name: my-warp-profile
+```
+**Callable** — Helm to GHCR (`registry-login`; needs `packages: write` in the **called** job — workflow already sets it):
 
 ```yaml
 jobs:
   chart:
     uses: FuelLabs/github-actions/.github/workflows/helm-publish-oci.yml@v1.0.0
+    with:
+      auth-mode: registry-login
+      chart-folder: helm/my-chart
+      registry-url: oci://ghcr.io/${{ github.repository_owner }}/charts
     secrets:
       REGISTRY_USERNAME: ${{ github.actor }}
       REGISTRY_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Callable** — Helm to AWS ECR (`ecr-oidc`):
+
+```yaml
+jobs:
+  chart:
+    uses: FuelLabs/github-actions/.github/workflows/helm-publish-oci.yml@v1.0.0
     with:
+      auth-mode: ecr-oidc
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+      aws-region: us-east-1
       chart-folder: helm/my-chart
-      registry-url: oci://ghcr.io/${{ github.repository_owner }}/charts
+      registry-url: oci://123456789012.dkr.ecr.us-east-1.amazonaws.com/charts
+      # Optional if registry-url includes host (recommended)
+      # registry-host: 123456789012.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 **Composite** (consumer writes full `permissions`):

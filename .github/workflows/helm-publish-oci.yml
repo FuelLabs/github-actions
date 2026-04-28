@@ -8,12 +8,29 @@ name: Reusable — Helm publish (OCI)
 on:
   workflow_call:
     inputs:
+      auth-mode:
+        type: string
+        description: 'registry-login | ecr-oidc'
+        required: false
+        default: registry-login
       chart-folder:
         type: string
         required: true
       registry-url:
         type: string
         required: true
+      registry-host:
+        type: string
+        description: Optional registry host for ecr-oidc (derived from registry-url when empty)
+        required: false
+        default: ''
+      aws-role-arn:
+        type: string
+        description: IAM role ARN for ecr-oidc mode
+        required: false
+      aws-region:
+        type: string
+        default: us-east-1
       chart-version:
         type: string
         description: Optional override; otherwise Chart.yaml version is used
@@ -26,9 +43,9 @@ on:
         default: v3.14.4
     secrets:
       REGISTRY_USERNAME:
-        required: true
+        required: false
       REGISTRY_ACCESS_TOKEN:
-        required: true
+        required: false
     outputs:
       chart-version:
         description: Chart version published
@@ -50,8 +67,12 @@ jobs:
         id: publish
         uses: FuelLabs/github-actions/.github/actions/helm-publish-oci@master
         with:
+          auth-mode: ${{ inputs.auth-mode }}
           chart-folder: ${{ inputs.chart-folder }}
           registry-url: ${{ inputs.registry-url }}
+          registry-host: ${{ inputs.registry-host }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           access-token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
           chart-version: ${{ inputs.chart-version }}

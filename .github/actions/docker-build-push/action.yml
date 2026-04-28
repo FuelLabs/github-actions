@@ -1,16 +1,16 @@
 # Bump third-party majors via PR after review (supply chain).
 name: Docker build and push
-description: Build and push a container image (ECR OIDC or registry login; Buildx or Warp).
+description: Build and push a container image (ECR private/public OIDC or registry login; Buildx or Warp).
 
 inputs:
   auth-mode:
-    description: 'ecr-oidc | registry-login'
+    description: 'ecr-oidc | ecr-public-oidc | registry-login'
     required: true
   aws-role-arn:
-    description: IAM role ARN for ECR (auth-mode ecr-oidc)
+    description: IAM role ARN for ECR (auth-mode ecr-oidc or ecr-public-oidc)
     required: false
   aws-region:
-    description: AWS region for ECR
+    description: AWS region for ECR (public ECR generally uses us-east-1)
     required: false
     default: us-east-1
   registry:
@@ -59,6 +59,18 @@ inputs:
   profile-name:
     description: Warp profile name (build-backend warp — required for org Warp projects)
     required: false
+  push-by-digest:
+    description: 'true | false (buildx only). true pushes canonical digest refs (for manifest merge flows).'
+    required: false
+    default: 'false'
+  cache-scope:
+    description: Optional GHA cache scope (buildx only), e.g. linux-amd64
+    required: false
+    default: ''
+  setup-only:
+    description: 'true | false. If true, only auth/login setup is performed (no metadata/build/push).'
+    required: false
+    default: 'false'
   push:
     description: 'true | false'
     required: false
@@ -67,31 +79,38 @@ inputs:
 outputs:
   image:
     description: Image reference (from metadata)
-    value: ${{ fromJSON(inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata)['image.name'] }}
+    value: ${{ inputs.setup-only == 'true' && '' || fromJSON(inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata)['image.name'] }}
   imageid:
     description: Image ID from build backend
-    value: ${{ inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || steps.publish-buildx.outputs.imageId }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || steps.publish-buildx.outputs.imageId) }}
   digest:
     description: Image digest
-    value: ${{ inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || steps.publish-buildx.outputs.digest }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || steps.publish-buildx.outputs.digest) }}
   metadata:
     description: Build metadata JSON
-    value: ${{ inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata }}
+    value: ${{ inputs.setup-only == 'true' && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.metadata || steps.publish-buildx.outputs.metadata) }}
 
 runs:
   using: composite
   steps:
     - name: Configure AWS credentials (ECR OIDC)
-      if: inputs.auth-mode == 'ecr-oidc'
+      if: inputs.auth-mode == 'ecr-oidc' || inputs.auth-mode == 'ecr-public-oidc'
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.aws-role-arn }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Login to Amazon ECR
+    - name: Login to Amazon ECR (private)
       if: inputs.auth-mode == 'ecr-oidc'
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Login to Amazon ECR Public
+      if: inputs.auth-mode == 'ecr-public-oidc'
+      id: login-ecr-public
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        registry-type: public
 
     - name: Log in to container registry
       if: inputs.auth-mode == 'registry-login'
@@ -103,6 +122,7 @@ runs:
 
     - name: Resolve metadata tag lines
       id: tag-lines
+      if: inputs.setup-only != 'true'
       shell: bash
       env:
         # Do not embed inputs in the script body; pass through env to avoid shell/heredoc injection
@@ -127,6 +147,7 @@ runs:
 
     - name: Docker meta
       id: meta
+      if: inputs.setup-only != 'true'
       uses: docker/metadata-action@v5
       with:
         images: |
@@ -138,15 +159,29 @@ runs:
           ${{ inputs.labels }}
 
     - name: Set up QEMU (Buildx cross-arch)
-      if: inputs.build-backend == 'buildx' && (contains(inputs.platforms, ',') || contains(inputs.platforms, 'arm'))
+      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && (contains(inputs.platforms, ',') || contains(inputs.platforms, 'arm'))
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      if: inputs.build-backend == 'buildx'
+      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx'
       uses: docker/setup-buildx-action@v3
 
+    - name: Build and push (Buildx canonical digest)
+      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest == 'true'
+      uses: docker/build-push-action@v6
+      id: publish-buildx
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        outputs: type=image,name=${{ inputs.image }},push-by-digest=true,name-canonical=true,push=true
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        cache-from: ${{ inputs.cache-scope != '' && format('type=gha,scope={0}', inputs.cache-scope) || 'type=gha' }}
+        cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
+
     - name: Build and push (Buildx)
-      if: inputs.build-backend == 'buildx'
+      if: inputs.setup-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest != 'true'
       uses: docker/build-push-action@v6
       id: publish-buildx
       with:
@@ -157,11 +192,11 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ inputs.build-args }}
         platforms: ${{ inputs.platforms }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: ${{ inputs.cache-scope != '' && format('type=gha,scope={0}', inputs.cache-scope) || 'type=gha' }}
+        cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
 
     - name: Build and push (Warp)
-      if: inputs.build-backend == 'warp'
+      if: inputs.setup-only != 'true' && inputs.build-backend == 'warp'
       uses: Warpbuilds/build-push-action@v6
       id: publish-warp
       with:
