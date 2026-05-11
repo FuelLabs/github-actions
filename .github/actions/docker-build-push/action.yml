@@ -183,6 +183,10 @@ runs:
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.dockerfile }}
+        # Default provenance/SBOM adds extra manifests; digest merge + ECR then often
+        # references a descriptor imagetools cannot resolve ("not found").
+        provenance: false
+        sbom: false
         outputs: type=image,name=${{ inputs.image }},push-by-digest=true,name-canonical=true,push=true
         labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ inputs.build-args }}

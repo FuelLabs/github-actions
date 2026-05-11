@@ -198,7 +198,13 @@ jobs:
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          digest="${digest#sha256:}"
+          digest="${digest//[[:space:]]/}"
+          if [[ ! "$digest" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "Invalid digest from build (expected 64 hex chars): ${{ steps.build.outputs.digest }}" >&2
+            exit 1
+          fi
+          touch "/tmp/digests/${digest,,}"
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
@@ -253,14 +259,19 @@ jobs:
           METADATA_JSON: ${{ steps.meta.outputs.metadata }}
         run: |
           set -euo pipefail
-          shopt -s nullglob
           manifests=()
-          for d in *; do
+          declare -A seen=()
+          while IFS= read -r -d '' f; do
+            d="$(basename "$f")"
+            d="${d,,}"
+            [[ "$d" =~ ^[0-9a-f]{64}$ ]] || continue
+            [[ -n "${seen[$d]:-}" ]] && continue
+            seen[$d]=1
             manifests+=("${IMAGE_REF}@sha256:${d}")
-          done
-          shopt -u nullglob
+          done < <(find . -type f -print0)
           if [ "${#manifests[@]}" -eq 0 ]; then
-            echo "No digest files found under $(pwd)" >&2
+            echo "No valid sha256 digest marker files under $(pwd)" >&2
+            find . -ls >&2 || true
             exit 1
           fi
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
