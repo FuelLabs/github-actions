@@ -1,0 +1,384 @@
+# Callable reusable workflow — Docker build & push (FuelLabs/github-actions).
+# Pin: uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@<ref>
+#
+# Composites must use remote uses: (not ./) — the job workspace is the caller’s repo, so
+# actions/checkout is the caller, not this repo. The composite ref below must be a
+# **literal** (not env — env is not allowed in `uses:`). On release, set it to the same
+# tag you publish (e.g. @v1.0.0) before tagging, so consumers pinning this workflow get a
+# matching composite. On feature branches, pin the same ref as this workflow file (not @master).
+name: Reusable — Docker build and push
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        type: string
+        description: GitHub-hosted runner label for the job
+        default: ubuntu-latest
+      platforms:
+        type: string
+        description: Comma-separated platforms (e.g. linux/amd64,linux/arm64)
+        default: linux/amd64
+      build-backend:
+        type: string
+        description: 'buildx | native | warp (buildx/native = native runner + digest merge path)'
+        default: buildx
+      auth-mode:
+        type: string
+        description: 'ecr-oidc | ecr-public-oidc | registry-login'
+        required: true
+      aws-role-arn:
+        type: string
+        description: IAM role for ECR OIDC (required when auth-mode is ecr-oidc or ecr-public-oidc)
+        required: false
+      aws-region:
+        type: string
+        default: us-east-1
+      runs-on-amd64:
+        type: string
+        description: Runner label for linux/amd64 native build
+        default: ubuntu-latest
+      runs-on-arm64:
+        type: string
+        description: Runner label for linux/arm64 native build
+        default: ubuntu-24.04-arm
+      registry:
+        type: string
+        description: Registry host when using registry-login
+        default: ghcr.io
+      docker-context:
+        type: string
+        default: .
+      dockerfile:
+        type: string
+        required: true
+      image:
+        type: string
+        required: true
+      tags:
+        type: string
+        description: Optional multiline docker/metadata-action tag rules (see .github/README.md)
+        required: false
+      flavor:
+        type: string
+        description: Optional docker/metadata-action flavor (e.g. latest=auto)
+        required: false
+        default: ''
+      labels:
+        type: string
+        description: Optional docker/metadata-action custom labels (multiline)
+        required: false
+        default: ''
+      build-args:
+        type: string
+        required: false
+      profile-name:
+        type: string
+        description: Warp profile (required when build-backend is warp for Fuel projects)
+        required: false
+      digest-artifact-key:
+        type: string
+        description: >
+          Suffix for digest upload-artifact names. MUST be unique per image when the caller runs this
+          workflow in a matrix (GitHub replaces artifacts with the same name). Use e.g. matrix.name.
+          If empty, a 16-char hash of inputs.image is used.
+        required: false
+        default: ''
+    secrets:
+      REGISTRY_USERNAME:
+        description: Username for registry-login (omit for pure ECR OIDC)
+        required: false
+      REGISTRY_PASSWORD:
+        description: Password or PAT for registry-login
+        required: false
+    outputs:
+      image:
+        description: Repository/image name without tag (inputs.image — stable across native-merge and Warp)
+        value: ${{ jobs.native-merge.outputs.image || jobs.warp.outputs.image }}
+      digest:
+        description: Image digest
+        value: ${{ jobs.native-merge.outputs.digest || jobs.warp.outputs.digest }}
+      metadata:
+        description: docker/metadata-action bake JSON (stable schema across native-merge and Warp)
+        value: ${{ jobs.native-merge.outputs.metadata || jobs.warp.outputs.metadata }}
+
+jobs:
+  native-plan:
+    if: ${{ inputs.build-backend != 'warp' }}
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      digest_artifact_key: ${{ steps.artifact-key.outputs.digest_artifact_key }}
+    steps:
+      - name: Build native matrix from requested platforms
+        id: plan
+        shell: bash
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+          RUNNER_AMD64: ${{ inputs.runs-on-amd64 }}
+          RUNNER_ARM64: ${{ inputs.runs-on-arm64 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          raw = os.environ.get("PLATFORMS", "")
+          runner_amd64 = os.environ.get("RUNNER_AMD64", "ubuntu-latest")
+          runner_arm64 = os.environ.get("RUNNER_ARM64", "ubuntu-24.04-arm")
+          allowed = {
+              "linux/amd64": runner_amd64,
+              "linux/arm64": runner_arm64,
+          }
+
+          requested = [p.strip() for p in raw.split(",") if p.strip()]
+          if not requested:
+              raise SystemExit("platforms input must contain at least one platform")
+
+          include = []
+          seen = set()
+          invalid = []
+          for p in requested:
+              if p not in allowed:
+                  invalid.append(p)
+                  continue
+              if p in seen:
+                  continue
+              seen.add(p)
+              include.append({"platform": p, "runner": allowed[p]})
+
+          if invalid:
+              raise SystemExit(
+                  "Unsupported platform(s): "
+                  + ", ".join(invalid)
+                  + ". Allowed: linux/amd64, linux/arm64"
+              )
+          if not include:
+              raise SystemExit("No valid platforms to build")
+
+          print(f"matrix={json.dumps({'include': include}, separators=(',', ':'))}")
+          PY
+
+      - name: Digest artifact key
+        id: artifact-key
+        shell: bash
+        env:
+          EXPLICIT: ${{ inputs.digest-artifact-key }}
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          if [ -n "${EXPLICIT}" ]; then
+            key="${EXPLICIT}"
+            key="${key//[^a-zA-Z0-9._-]/-}"
+            key="${key:0:120}"
+          else
+            key=$(printf '%s' "$IMAGE" | sha256sum | awk '{print substr($1,1,16)}')
+          fi
+          printf '%s\n' "digest_artifact_key=$key" >> "$GITHUB_OUTPUT"
+
+  native-build:
+    if: ${{ inputs.build-backend != 'warp' }}
+    needs: native-plan
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.native-plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive platform pair
+        id: platform
+        shell: bash
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          platform="${MATRIX_PLATFORM}"
+          echo "pair=${platform//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push by digest (native)
+        id: build
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          context: ${{ inputs.docker-context }}
+          dockerfile: ${{ inputs.dockerfile }}
+          build-backend: buildx
+          push-by-digest: 'true'
+          cache-scope: ${{ steps.platform.outputs.pair }}
+          platforms: ${{ matrix.platform }}
+          build-args: ${{ inputs.build-args }}
+
+      - name: Export digest
+        shell: bash
+        env:
+          BUILD_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/digests
+          digest="${BUILD_DIGEST}"
+          digest="${digest#sha256:}"
+          digest="${digest//[[:space:]]/}"
+          if [[ ! "$digest" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "Invalid digest from build (expected 64 hex chars): ${BUILD_DIGEST}" >&2
+            exit 1
+          fi
+          touch "/tmp/digests/${digest,,}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.platform.outputs.pair }}-${{ needs.native-plan.outputs.digest_artifact_key }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  native-merge:
+    if: ${{ inputs.build-backend != 'warp' }}
+    needs:
+      - native-plan
+      - native-build
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.inspect.outputs.digest }}
+      metadata: ${{ steps.meta.outputs.metadata }}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*-${{ needs.native-plan.outputs.digest_artifact_key }}
+          merge-multiple: true
+
+      - name: Login and metadata only (reuse composite)
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
+        id: meta
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          dockerfile: ${{ inputs.dockerfile }}
+          metadata-only: 'true'
+
+      # Same as o2-mm-stoikov merge job: metadata-only composite skips setup-buildx; imagetools needs it.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+          METADATA_JSON: ${{ steps.meta.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          manifests=()
+          declare -A seen=()
+          while IFS= read -r -d '' f; do
+            d="$(basename "$f")"
+            d="${d,,}"
+            [[ "$d" =~ ^[0-9a-f]{64}$ ]] || continue
+            [[ -n "${seen[$d]:-}" ]] && continue
+            seen[$d]=1
+            manifests+=("${IMAGE_REF}@sha256:${d}")
+          done < <(find . -type f -print0)
+          if [ "${#manifests[@]}" -eq 0 ]; then
+            echo "No valid sha256 digest marker files under $(pwd)" >&2
+            find . -ls >&2 || true
+            exit 1
+          fi
+          set -f
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
+            "${manifests[@]}"
+
+      - name: Set image output
+        id: image
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "image=$IMAGE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect pushed manifest digest
+        id: inspect
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Match o2-mm-stoikov: inspect repo:version (metadata-action version == primary tag suffix).
+          if [ -z "${VERSION}" ]; then
+            echo "Empty metadata version; cannot inspect merged manifest" >&2
+            exit 1
+          fi
+          digest="$(
+            docker buildx imagetools inspect "${IMAGE_REF}:${VERSION}" --format '{{json .Manifest}}' \
+              | jq -r '.digest // empty'
+          )"
+          if [ -z "${digest}" ]; then
+            echo "Could not read manifest digest for ${IMAGE_REF}:${VERSION}" >&2
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  warp:
+    if: ${{ inputs.build-backend == 'warp' }}
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+      metadata: ${{ steps.build.outputs.metadata }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push (Warp)
+        id: build
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          context: ${{ inputs.docker-context }}
+          dockerfile: ${{ inputs.dockerfile }}
+          build-args: ${{ inputs.build-args }}
+          platforms: ${{ inputs.platforms }}
+          build-backend: warp
+          profile-name: ${{ inputs.profile-name }}

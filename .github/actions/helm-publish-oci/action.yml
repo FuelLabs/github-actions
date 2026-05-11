@@ -1,0 +1,216 @@
+# Non-PR Helm OCI publish only (no is-pr / pr-number / Chart.yaml PR mutation).
+# Bump third-party majors via PR after review (supply chain).
+name: Helm publish (OCI)
+description: Lint and push a Helm chart to an OCI registry using Chart.yaml version or an override.
+
+inputs:
+  auth-mode:
+    description: 'registry-login | ecr-oidc'
+    required: false
+    default: registry-login
+  chart-folder:
+    description: Path to the Helm chart directory
+    required: true
+  registry-url:
+    description: OCI registry URL for the chart (e.g. oci://ghcr.io/org/charts)
+    required: true
+  registry-host:
+    description: Registry host for helm registry login in ecr-oidc mode (e.g. 123.dkr.ecr.us-east-1.amazonaws.com). If empty, derived from registry-url.
+    required: false
+    default: ''
+  username:
+    description: Registry username (required for registry-login)
+    required: false
+  access-token:
+    description: Registry password or token (required for registry-login). Caller should set from secrets — masked in logs.
+    required: false
+  aws-role-arn:
+    description: IAM role ARN for OIDC auth (required for ecr-oidc)
+    required: false
+  aws-region:
+    description: AWS region for ECR in ecr-oidc mode
+    required: false
+    default: us-east-1
+  chart-version:
+    description: Override chart version (otherwise read from Chart.yaml)
+    required: false
+  force:
+    description: 'true | false — force push'
+    required: false
+    default: 'false'
+  helm-version:
+    description: Helm CLI version for azure/setup-helm (e.g. v3.14.4 or latest)
+    required: false
+    default: v3.14.4
+
+outputs:
+  chart-version:
+    description: Chart version that was published
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: ${{ inputs.helm-version }}
+
+    - name: Validate auth-mode input combination
+      shell: bash
+      env:
+        AUTH_MODE: ${{ inputs.auth-mode }}
+        USERNAME: ${{ inputs.username }}
+        ACCESS_TOKEN: ${{ inputs.access-token }}
+        AWS_ROLE_ARN: ${{ inputs.aws-role-arn }}
+      run: |
+        set -euo pipefail
+        case "$AUTH_MODE" in
+          registry-login)
+            if [ -z "$USERNAME" ] || [ -z "$ACCESS_TOKEN" ]; then
+              echo "registry-login requires username and access-token" >&2
+              exit 1
+            fi
+            ;;
+          ecr-oidc)
+            if [ -z "$AWS_ROLE_ARN" ]; then
+              echo "ecr-oidc requires aws-role-arn" >&2
+              exit 1
+            fi
+            ;;
+          *)
+            echo "Unsupported auth-mode: $AUTH_MODE" >&2
+            exit 1
+            ;;
+        esac
+
+    - name: Configure AWS credentials (OIDC)
+      if: inputs.auth-mode == 'ecr-oidc'
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-role-arn }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Resolve registry host for ECR login
+      if: inputs.auth-mode == 'ecr-oidc'
+      id: registry-host
+      shell: bash
+      env:
+        REGISTRY_HOST_INPUT: ${{ inputs.registry-host }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+      run: |
+        set -euo pipefail
+        host="$REGISTRY_HOST_INPUT"
+        if [ -z "$host" ]; then
+          host="${REGISTRY_URL#oci://}"
+          host="${host%%/*}"
+        fi
+        if [ -z "$host" ]; then
+          echo "Unable to resolve registry host from registry-url: $REGISTRY_URL" >&2
+          exit 1
+        fi
+        echo "host=$host" >> "$GITHUB_OUTPUT"
+
+    - name: Helm registry login to ECR
+      if: inputs.auth-mode == 'ecr-oidc'
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws-region }}
+        REGISTRY_HOST: ${{ steps.registry-host.outputs.host }}
+      run: |
+        set -euo pipefail
+        aws ecr get-login-password --region "$AWS_REGION" | helm registry login --username AWS --password-stdin "$REGISTRY_HOST"
+
+    - name: Determine chart version
+      id: version
+      shell: bash
+      env:
+        CHART_FOLDER: ${{ inputs.chart-folder }}
+        CHART_VERSION_INPUT: ${{ inputs.chart-version }}
+      run: |
+        set -euo pipefail
+        chart_yaml="${CHART_FOLDER}/Chart.yaml"
+        if [ -n "$CHART_VERSION_INPUT" ]; then
+          if [[ "$CHART_VERSION_INPUT" == *$'\n'* ]]; then
+            echo "chart-version must be a single line" >&2
+            exit 1
+          fi
+          CHART_VERSION="$CHART_VERSION_INPUT"
+        else
+          CHART_VERSION=$(grep '^version:' "$chart_yaml" | head -1 | sed 's/^version:[[:space:]]*//' | tr -d "'\"")
+        fi
+        if [[ "$CHART_VERSION" == *$'\n'* || "$CHART_VERSION" == *$'\r'* ]]; then
+          echo "Chart version value must be a single line" >&2
+          exit 1
+        fi
+        # Single-line value only; avoid printf interpreting % in version strings
+        printf '%s\n' "version=$CHART_VERSION" >> "$GITHUB_OUTPUT"
+        echo "Chart version: ${CHART_VERSION}"
+
+    - name: Apply chart version override to Chart.yaml
+      if: inputs.chart-version != ''
+      shell: bash
+      env:
+        CHART_FOLDER: ${{ inputs.chart-folder }}
+        CHART_VERSION: ${{ inputs.chart-version }}
+      run: |
+        set -euo pipefail
+        chart_yaml="${CHART_FOLDER}/Chart.yaml"
+        if [[ "$CHART_VERSION" == *$'\n'* ]]; then
+          echo "chart-version must be a single line" >&2
+          exit 1
+        fi
+        cp -a "$chart_yaml" "${chart_yaml}.pre-oci-publish.bak"
+        tmp="${chart_yaml}.oci.publish.tmp"
+        # awk: replace first top-level version line; avoids sed delimiter/injection in the value
+        awk -v nver="$CHART_VERSION" 'BEGIN{done=0} /^version:/{if(!done){print "version: " nver; done=1; next}} 1' "$chart_yaml" > "$tmp" && mv "$tmp" "$chart_yaml"
+
+    - name: Lint Helm chart
+      shell: bash
+      env:
+        CHART_FOLDER: ${{ inputs.chart-folder }}
+      run: helm lint "$CHART_FOLDER"
+
+    - name: Package and push chart (OCI, registry-login)
+      if: inputs.auth-mode == 'registry-login'
+      uses: bsord/helm-push@v4.1.0
+      with:
+        useOCIRegistry: true
+        registry-url: ${{ inputs.registry-url }}
+        username: ${{ inputs.username }}
+        access-token: ${{ inputs.access-token }}
+        force: ${{ inputs.force }}
+        chart-folder: ${{ inputs.chart-folder }}
+
+    - name: Package and push chart (OCI, ecr-oidc)
+      if: inputs.auth-mode == 'ecr-oidc'
+      shell: bash
+      env:
+        CHART_FOLDER: ${{ inputs.chart-folder }}
+        CHART_VERSION: ${{ steps.version.outputs.version }}
+        REGISTRY_URL: ${{ inputs.registry-url }}
+      run: |
+        set -euo pipefail
+        tmpdir="$(mktemp -d)"
+        trap 'rm -rf "$tmpdir"' EXIT
+        helm package "$CHART_FOLDER" --version "$CHART_VERSION" --destination "$tmpdir"
+        shopt -s nullglob
+        pkgs=("$tmpdir"/*.tgz)
+        shopt -u nullglob
+        if [ "${#pkgs[@]}" -ne 1 ]; then
+          echo "Expected exactly one chart package in $tmpdir, got ${#pkgs[@]}" >&2
+          exit 1
+        fi
+        helm push "${pkgs[0]}" "$REGISTRY_URL"
+
+    - name: Restore Chart.yaml after override
+      if: inputs.chart-version != '' && always()
+      shell: bash
+      env:
+        CHART_FOLDER: ${{ inputs.chart-folder }}
+      run: |
+        set -euo pipefail
+        chart_yaml="${CHART_FOLDER}/Chart.yaml"
+        if [ -f "${chart_yaml}.pre-oci-publish.bak" ]; then
+          mv -- "${chart_yaml}.pre-oci-publish.bak" "$chart_yaml"
+        fi

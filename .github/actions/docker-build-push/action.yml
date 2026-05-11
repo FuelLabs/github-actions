@@ -1,0 +1,227 @@
+# Bump third-party majors via PR after review (supply chain).
+name: Docker build and push
+description: Build and push a container image (ECR private/public OIDC or registry login; Buildx or Warp).
+
+inputs:
+  auth-mode:
+    description: 'ecr-oidc | ecr-public-oidc | registry-login'
+    required: true
+  aws-role-arn:
+    description: IAM role ARN for ECR (auth-mode ecr-oidc or ecr-public-oidc)
+    required: false
+  aws-region:
+    description: AWS region for ECR (public ECR generally uses us-east-1)
+    required: false
+    default: us-east-1
+  registry:
+    description: Registry host (registry-login), e.g. ghcr.io
+    required: false
+    default: ghcr.io
+  username:
+    description: Registry username (registry-login)
+    required: false
+  password:
+    description: 'Registry password or PAT (registry-login). Caller passes secrets.* in workflow with: — masked in logs.'
+    required: false
+  image:
+    description: Image name for docker/metadata-action (without tag)
+    required: true
+  tags:
+    description: Multiline docker/metadata-action tag rules (empty = ECR-style sha + dated raw tag)
+    required: false
+    default: ''
+  flavor:
+    description: Optional global metadata / tag flavor (docker/metadata-action), e.g. 'latest=auto'
+    required: false
+    default: ''
+  labels:
+    description: Optional extra image labels (docker/metadata-action, multiline KEY=VAL)
+    required: false
+    default: ''
+  context:
+    description: Docker build context path
+    required: false
+    default: .
+  dockerfile:
+    description: Path to Dockerfile
+    required: true
+  build-args:
+    description: Build-args (multiline KEY=VAL)
+    required: false
+  platforms:
+    description: Comma-separated platforms, e.g. linux/amd64,linux/arm64
+    required: false
+    default: linux/amd64
+  build-backend:
+    description: 'buildx | warp'
+    required: false
+    default: buildx
+  profile-name:
+    description: Warp profile name (build-backend warp — required for org Warp projects)
+    required: false
+  push-by-digest:
+    description: 'true | false (buildx only). true pushes canonical digest refs (for manifest merge flows).'
+    required: false
+    default: 'false'
+  cache-scope:
+    description: Optional GHA cache scope (buildx only), e.g. linux-amd64
+    required: false
+    default: ''
+  setup-only:
+    description: 'true | false. If true, only auth/login setup is performed (no metadata/build/push).'
+    required: false
+    default: 'false'
+  metadata-only:
+    description: 'true | false. If true, run auth/login + metadata generation only (no build/push).'
+    required: false
+    default: 'false'
+  push:
+    description: 'true | false'
+    required: false
+    default: 'true'
+
+outputs:
+  image:
+    description: Repository/image name without tag (matches inputs.image — not docker/metadata bake image.name, which can be comma-separated tagged refs)
+    value: ${{ inputs.setup-only != 'true' && inputs.image || '' }}
+  imageid:
+    description: Image ID from build backend
+    value: ${{ (inputs.setup-only != 'true' && inputs.metadata-only != 'true') && (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) || '' }}
+  digest:
+    description: Image digest
+    value: ${{ (inputs.setup-only != 'true' && inputs.metadata-only != 'true') && (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) || '' }}
+  metadata:
+    description: docker/metadata-action bake JSON (same schema for Buildx digest merge, Buildx push, Warp — excludes setup-only login-only runs)
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.json || '' }}
+  tags:
+    description: docker/metadata-action computed tags list
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.tags || '' }}
+  labels:
+    description: docker/metadata-action computed labels list
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.labels || '' }}
+  version:
+    description: docker/metadata-action version (primary tag component for image:version)
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.version || '' }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure AWS credentials (ECR OIDC)
+      if: inputs.auth-mode == 'ecr-oidc' || inputs.auth-mode == 'ecr-public-oidc'
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-role-arn }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Login to Amazon ECR (private)
+      if: inputs.auth-mode == 'ecr-oidc'
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Login to Amazon ECR Public
+      if: inputs.auth-mode == 'ecr-public-oidc'
+      id: login-ecr-public
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        registry-type: public
+
+    - name: Log in to container registry
+      if: inputs.auth-mode == 'registry-login'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+
+    - name: Resolve metadata tag lines
+      id: tag-lines
+      if: inputs.setup-only != 'true'
+      shell: bash
+      env:
+        # Do not embed inputs in the script body; pass through env to avoid shell/heredoc injection
+        INPUT_TAGS: ${{ inputs.tags }}
+      run: |
+        set -euo pipefail
+        if [ -r /proc/sys/kernel/random/uuid ]; then
+          delim="GHA_OUT_$(tr -d -- '-\n\r' < /proc/sys/kernel/random/uuid)"
+        else
+          delim="GHA_OUT_${RANDOM}_$$_$(date +%s%N)"
+        fi
+        {
+          echo "tags<<${delim}"
+          if [ -n "$INPUT_TAGS" ]; then
+            printf '%s\n' "$INPUT_TAGS"
+          else
+            printf '%s\n' 'type=sha,prefix='
+            printf '%s\n' "type=raw,value=sha-{{sha}}-{{date 'YYYYMMDDHHmmss'}}"
+          fi
+          echo "$delim"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Docker meta
+      id: meta
+      if: inputs.setup-only != 'true'
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ inputs.image }}
+        tags: ${{ steps.tag-lines.outputs.tags }}
+        flavor: |
+          ${{ inputs.flavor }}
+        labels: |
+          ${{ inputs.labels }}
+
+    - name: Set up QEMU (Buildx cross-arch)
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && (contains(inputs.platforms, ',') || contains(inputs.platforms, 'arm'))
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx'
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push (Buildx canonical digest)
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest == 'true'
+      uses: docker/build-push-action@v6
+      id: publish-buildx-digest
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        # Default provenance/SBOM adds extra manifests; digest merge + ECR then often
+        # references a descriptor imagetools cannot resolve ("not found").
+        provenance: false
+        sbom: false
+        outputs: type=image,name=${{ inputs.image }},push-by-digest=true,name-canonical=true,push=true
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        cache-from: ${{ inputs.cache-scope != '' && format('type=gha,scope={0}', inputs.cache-scope) || 'type=gha' }}
+        cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
+
+    - name: Build and push (Buildx)
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'buildx' && inputs.push-by-digest != 'true'
+      uses: docker/build-push-action@v6
+      id: publish-buildx
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        push: ${{ inputs.push == 'true' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        cache-from: ${{ inputs.cache-scope != '' && format('type=gha,scope={0}', inputs.cache-scope) || 'type=gha' }}
+        cache-to: ${{ inputs.cache-scope != '' && format('type=gha,mode=max,scope={0}', inputs.cache-scope) || 'type=gha,mode=max' }}
+
+    - name: Build and push (Warp)
+      if: inputs.setup-only != 'true' && inputs.metadata-only != 'true' && inputs.build-backend == 'warp'
+      uses: Warpbuilds/build-push-action@v6
+      id: publish-warp
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        push: ${{ inputs.push == 'true' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ inputs.build-args }}
+        platforms: ${{ inputs.platforms }}
+        profile-name: ${{ inputs.profile-name }}

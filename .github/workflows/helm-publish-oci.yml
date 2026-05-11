@@ -1,0 +1,82 @@
+# Callable reusable workflow — Helm OCI publish (non-PR flows only).
+# Pin: uses: FuelLabs/github-actions/.github/workflows/helm-publish-oci.yml@<ref>
+#
+# Composites use remote `uses:` with a **literal** ref (not `env` — not allowed in `uses:`).
+# On release, set it to the same tag you publish (e.g. @v1.0.0) before tagging. See docker-build-push.yml.
+name: Reusable — Helm publish (OCI)
+
+on:
+  workflow_call:
+    inputs:
+      auth-mode:
+        type: string
+        description: 'registry-login | ecr-oidc'
+        required: false
+        default: registry-login
+      chart-folder:
+        type: string
+        required: true
+      registry-url:
+        type: string
+        required: true
+      registry-host:
+        type: string
+        description: Optional registry host for ecr-oidc (derived from registry-url when empty)
+        required: false
+        default: ''
+      aws-role-arn:
+        type: string
+        description: IAM role ARN for ecr-oidc mode
+        required: false
+      aws-region:
+        type: string
+        default: us-east-1
+      chart-version:
+        type: string
+        description: Optional override; otherwise Chart.yaml version is used
+        required: false
+      force:
+        type: string
+        default: 'false'
+      helm-version:
+        type: string
+        default: v3.14.4
+    secrets:
+      REGISTRY_USERNAME:
+        required: false
+      REGISTRY_ACCESS_TOKEN:
+        required: false
+    outputs:
+      chart-version:
+        description: Chart version published
+        value: ${{ jobs.helm.outputs.chart-version }}
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    permissions:
+      # Required for aws-actions/configure-aws-credentials OIDC (ecr-oidc mode)
+      id-token: write
+      contents: read
+      # Required when REGISTRY_ACCESS_TOKEN is GITHUB_TOKEN pushing to ghcr.io (Packages)
+      packages: write
+    outputs:
+      chart-version: ${{ steps.publish.outputs.chart-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish chart
+        id: publish
+        uses: FuelLabs/github-actions/.github/actions/helm-publish-oci@master
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          chart-folder: ${{ inputs.chart-folder }}
+          registry-url: ${{ inputs.registry-url }}
+          registry-host: ${{ inputs.registry-host }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          access-token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
+          chart-version: ${{ inputs.chart-version }}
+          force: ${{ inputs.force }}
+          helm-version: ${{ inputs.helm-version }}
