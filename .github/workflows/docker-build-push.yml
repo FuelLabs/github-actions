@@ -312,6 +312,7 @@ jobs:
             find . -ls >&2 || true
             exit 1
           fi
+          set -f
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
             "${manifests[@]}"
 
