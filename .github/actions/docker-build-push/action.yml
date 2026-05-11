@@ -99,6 +99,9 @@ outputs:
   labels:
     description: docker/metadata-action computed labels list
     value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.labels }}
+  version:
+    description: docker/metadata-action version (primary tag component for image:version)
+    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.version }}
 
 runs:
   using: composite

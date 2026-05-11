@@ -251,6 +251,10 @@ jobs:
           dockerfile: ${{ inputs.dockerfile }}
           metadata-only: 'true'
 
+      # Same as o2-mm-stoikov merge job: metadata-only composite skips setup-buildx; imagetools needs it.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
         shell: bash
@@ -290,18 +294,21 @@ jobs:
         id: inspect
         shell: bash
         env:
-          METADATA_JSON: ${{ steps.meta.outputs.metadata }}
+          IMAGE_REF: ${{ inputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           set -euo pipefail
-          first_tag="$(jq -r '.tags[0]' <<< "$METADATA_JSON")"
-          # Do not pipe inspect to awk with early exit: imagetools keeps writing the manifest
-          # tree and hits SIGPIPE under pipefail. Use --format + jq instead.
+          # Match o2-mm-stoikov: inspect repo:version (metadata-action version == primary tag suffix).
+          if [ -z "${VERSION}" ]; then
+            echo "Empty metadata version; cannot inspect merged manifest" >&2
+            exit 1
+          fi
           digest="$(
-            docker buildx imagetools inspect "$first_tag" --format '{{json .Manifest}}' \
+            docker buildx imagetools inspect "${IMAGE_REF}:${VERSION}" --format '{{json .Manifest}}' \
               | jq -r '.digest // empty'
           )"
           if [ -z "${digest}" ]; then
-            echo "Could not read manifest digest for ${first_tag}" >&2
+            echo "Could not read manifest digest for ${IMAGE_REF}:${VERSION}" >&2
             exit 1
           fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
