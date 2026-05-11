@@ -67,7 +67,7 @@ jobs:
 
       - name: Publish chart
         id: publish
-        uses: FuelLabs/github-actions/.github/actions/helm-publish-oci@master
+        uses: FuelLabs/github-actions/.github/actions/helm-publish-oci@feature/devops-1276-create-shared-github-actions
         with:
           auth-mode: ${{ inputs.auth-mode }}
           chart-folder: ${{ inputs.chart-folder }}
