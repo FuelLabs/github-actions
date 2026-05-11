@@ -76,6 +76,14 @@ on:
         type: string
         description: Warp profile (required when build-backend is warp for Fuel projects)
         required: false
+      digest-artifact-key:
+        type: string
+        description: >
+          Suffix for digest upload-artifact names. MUST be unique per image when the caller runs this
+          workflow in a matrix (GitHub replaces artifacts with the same name). Use e.g. matrix.name.
+          If empty, a 16-char hash of inputs.image is used.
+        required: false
+        default: ''
     secrets:
       REGISTRY_USERNAME:
         description: Username for registry-login (omit for pure ECR OIDC)
@@ -100,6 +108,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      digest_artifact_key: ${{ steps.artifact-key.outputs.digest_artifact_key }}
     steps:
       - name: Build native matrix from requested platforms
         id: plan
@@ -149,6 +158,23 @@ jobs:
 
           print(f"matrix={json.dumps({'include': include}, separators=(',', ':'))}")
           PY
+
+      - name: Digest artifact key
+        id: artifact-key
+        shell: bash
+        env:
+          EXPLICIT: ${{ inputs.digest-artifact-key }}
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          if [ -n "${EXPLICIT}" ]; then
+            key="${EXPLICIT}"
+            key="${key//[^a-zA-Z0-9._-]/-}"
+            key="${key:0:120}"
+          else
+            key=$(printf '%s' "$IMAGE" | sha256sum | awk '{print substr($1,1,16)}')
+          fi
+          printf '%s\n' "digest_artifact_key=$key" >> "$GITHUB_OUTPUT"
 
   native-build:
     if: ${{ inputs.build-backend != 'warp' }}
@@ -209,14 +235,16 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.platform.outputs.pair }}
+          name: digests-${{ steps.platform.outputs.pair }}-${{ needs.native-plan.outputs.digest_artifact_key }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
 
   native-merge:
     if: ${{ inputs.build-backend != 'warp' }}
-    needs: native-build
+    needs:
+      - native-plan
+      - native-build
     runs-on: ${{ inputs.runs-on }}
     permissions:
       id-token: write
@@ -231,7 +259,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-*
+          pattern: digests-*-${{ needs.native-plan.outputs.digest_artifact_key }}
           merge-multiple: true
 
       - name: Login and metadata only (reuse composite)
