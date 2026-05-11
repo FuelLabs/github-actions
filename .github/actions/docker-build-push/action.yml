@@ -83,25 +83,25 @@ inputs:
 outputs:
   image:
     description: Repository/image name without tag (matches inputs.image — not docker/metadata bake image.name, which can be comma-separated tagged refs)
-    value: ${{ inputs.setup-only == 'true' && '' || inputs.image }}
+    value: ${{ inputs.setup-only != 'true' && inputs.image || '' }}
   imageid:
     description: Image ID from build backend
-    value: ${{ (inputs.setup-only == 'true' || inputs.metadata-only == 'true') && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) }}
+    value: ${{ (inputs.setup-only != 'true' && inputs.metadata-only != 'true') && (inputs.build-backend == 'warp' && steps.publish-warp.outputs.imageId || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.imageId || steps.publish-buildx.outputs.imageId)) || '' }}
   digest:
     description: Image digest
-    value: ${{ (inputs.setup-only == 'true' || inputs.metadata-only == 'true') && '' || (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) }}
+    value: ${{ (inputs.setup-only != 'true' && inputs.metadata-only != 'true') && (inputs.build-backend == 'warp' && steps.publish-warp.outputs.digest || (inputs.push-by-digest == 'true' && steps.publish-buildx-digest.outputs.digest || steps.publish-buildx.outputs.digest)) || '' }}
   metadata:
     description: docker/metadata-action bake JSON (same schema for Buildx digest merge, Buildx push, Warp — excludes setup-only login-only runs)
     value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.json || '' }}
   tags:
     description: docker/metadata-action computed tags list
-    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.tags }}
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.tags || '' }}
   labels:
     description: docker/metadata-action computed labels list
-    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.labels }}
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.labels || '' }}
   version:
     description: docker/metadata-action version (primary tag component for image:version)
-    value: ${{ inputs.setup-only == 'true' && '' || steps.meta.outputs.version }}
+    value: ${{ inputs.setup-only != 'true' && steps.meta.outputs.version || '' }}
 
 runs:
   using: composite
