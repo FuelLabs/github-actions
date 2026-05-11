@@ -1,5 +1,5 @@
 # Legacy callable — GHCR username/password + metadata inputs.
-# Implementation: forwards to `docker-build-push.yml` in this repo (same ref as this file).
+# Nested jobs use FuelLabs/github-actions/... (not ./): cross-repo workflow_call resolves ./ to the caller.
 # Pin: `uses: FuelLabs/github-actions/.github/workflows/publish-docker-image.yml@<ref>`
 name: Build and Publish Docker Image
 
@@ -53,7 +53,7 @@ on:
 
 jobs:
   build-and-publish-docker-image:
-    uses: ./.github/workflows/docker-build-push.yml
+    uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@master
     with:
       runs-on: ubuntu-latest
       auth-mode: registry-login
@@ -72,7 +72,7 @@ jobs:
   notify-slack-on-failure:
     needs: [build-and-publish-docker-image]
     if: failure()
-    uses: ./.github/workflows/notify-slack-action.yml
+    uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
