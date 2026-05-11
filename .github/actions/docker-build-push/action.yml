@@ -140,7 +140,7 @@ runs:
       run: |
         set -euo pipefail
         if [ -r /proc/sys/kernel/random/uuid ]; then
-          delim="GHA_OUT_$(< /proc/sys/kernel/random/uuid tr -d '-\n\r')"
+          delim="GHA_OUT_$(tr -d -- '-\n\r' < /proc/sys/kernel/random/uuid)"
         else
           delim="GHA_OUT_${RANDOM}_$$_$(date +%s%N)"
         fi
