@@ -202,7 +202,7 @@ jobs:
 
       - name: Build and push by digest (native)
         id: build
-        uses: FuelLabs/github-actions/.github/actions/docker-build-push@feature/devops-1276-create-shared-github-actions
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         with:
           auth-mode: ${{ inputs.auth-mode }}
           aws-role-arn: ${{ inputs.aws-role-arn }}
@@ -269,7 +269,7 @@ jobs:
           merge-multiple: true
 
       - name: Login and metadata only (reuse composite)
-        uses: FuelLabs/github-actions/.github/actions/docker-build-push@feature/devops-1276-create-shared-github-actions
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         id: meta
         with:
           auth-mode: ${{ inputs.auth-mode }}
@@ -364,7 +364,7 @@ jobs:
 
       - name: Build and push (Warp)
         id: build
-        uses: FuelLabs/github-actions/.github/actions/docker-build-push@feature/devops-1276-create-shared-github-actions
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         with:
           auth-mode: ${{ inputs.auth-mode }}
           aws-role-arn: ${{ inputs.aws-role-arn }}
