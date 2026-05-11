@@ -19,7 +19,10 @@ on:
         default: "deployment/Dockerfile"
 
       images:
-        description: "Docker image names (e.g. 'ghcr.io/FuelLabs/repository-name')"
+        description: >
+          One or more image repository names (comma-separated). Each is published separately;
+          multi-value strings must not be passed as a single docker-build-push image input (commas
+          break the buildx outputs CSV). Same idea as docker/metadata-action multi-image lists.
         required: true
         type: string
 
@@ -52,14 +55,42 @@ on:
         required: true
 
 jobs:
+  prepare-images:
+    runs-on: ubuntu-latest
+    outputs:
+      images_json: ${{ steps.split.outputs.images_json }}
+    steps:
+      - name: Split images input
+        id: split
+        shell: bash
+        env:
+          IMAGES: ${{ inputs.images }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          raw = os.environ.get("IMAGES", "")
+          parts = [p.strip() for p in raw.split(",") if p.strip()]
+          if not parts:
+              raise SystemExit("images input must contain at least one image name")
+          print(f"images_json={json.dumps(parts)}")
+          PY
+
   build-and-publish-docker-image:
+    needs: prepare-images
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.prepare-images.outputs.images_json) }}
     uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@master
     with:
       runs-on: ubuntu-latest
       auth-mode: registry-login
       registry: ghcr.io
       dockerfile: ${{ inputs.docker_file }}
-      image: ${{ inputs.images }}
+      image: ${{ matrix.image }}
       tags: ${{ inputs.tags }}
       labels: ${{ inputs.labels }}
       flavor: ${{ inputs.flavor }}
@@ -70,8 +101,8 @@ jobs:
       REGISTRY_PASSWORD: ${{ secrets.GITHUB_CONTAINER_PASSWORD }}
 
   notify-slack-on-failure:
-    needs: [build-and-publish-docker-image]
-    if: failure()
+    needs: [prepare-images, build-and-publish-docker-image]
+    if: ${{ always() && (needs.prepare-images.result == 'failure' || needs['build-and-publish-docker-image'].result == 'failure') }}
     uses: FuelLabs/github-actions/.github/workflows/notify-slack-action.yml@master
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
