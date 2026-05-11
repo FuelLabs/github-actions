@@ -283,7 +283,16 @@ jobs:
         run: |
           set -euo pipefail
           first_tag="$(jq -r '.tags[0]' <<< "$METADATA_JSON")"
-          digest="$(docker buildx imagetools inspect "$first_tag" | awk '/Digest:/ {print $2; exit}')"
+          # Do not pipe inspect to awk with early exit: imagetools keeps writing the manifest
+          # tree and hits SIGPIPE under pipefail. Use --format + jq instead.
+          digest="$(
+            docker buildx imagetools inspect "$first_tag" --format '{{json .Manifest}}' \
+              | jq -r '.digest // empty'
+          )"
+          if [ -z "${digest}" ]; then
+            echo "Could not read manifest digest for ${first_tag}" >&2
+            exit 1
+          fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
   warp:
