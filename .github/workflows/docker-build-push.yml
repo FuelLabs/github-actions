@@ -125,13 +125,13 @@ on:
     outputs:
       image:
         description: Repository/image name without tag (inputs.image — stable across native-merge and Warp)
-        value: ${{ jobs.native-merge.outputs.image || jobs.warp-matrix-merge.outputs.image || jobs.warp-single.outputs.image }}
+        value: ${{ jobs.native-merge.outputs.image || jobs.warp-multi-merge.outputs.image || jobs.warp-single.outputs.image }}
       digest:
         description: Image digest
-        value: ${{ jobs.native-merge.outputs.digest || jobs.warp-matrix-merge.outputs.digest || jobs.warp-single.outputs.digest }}
+        value: ${{ jobs.native-merge.outputs.digest || jobs.warp-multi-merge.outputs.digest || jobs.warp-single.outputs.digest }}
       metadata:
         description: docker/metadata-action bake JSON (stable schema across native-merge and Warp)
-        value: ${{ jobs.native-merge.outputs.metadata || jobs.warp-matrix-merge.outputs.metadata || jobs.warp-single.outputs.metadata }}
+        value: ${{ jobs.native-merge.outputs.metadata || jobs.warp-multi-merge.outputs.metadata || jobs.warp-single.outputs.metadata }}
 
 jobs:
   native-plan:
