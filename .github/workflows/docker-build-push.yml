@@ -29,7 +29,7 @@ on:
           Comma-separated platforms (e.g. linux/amd64,linux/arm64). For build-backend warp,
           enable amd64 and arm64 on the Warp Docker Builders profile or multi-arch builds will
           mis-route / fail (see Warp Docker Builders multi-platform docs).
-        default: linux/amd64,linux/arm64
+        default: linux/amd64
       build-backend:
         type: string
         description: >
