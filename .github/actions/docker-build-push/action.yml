@@ -49,7 +49,10 @@ inputs:
     description: Build-args (multiline KEY=VAL)
     required: false
   platforms:
-    description: Comma-separated platforms, e.g. linux/amd64,linux/arm64
+    description: >
+      Comma-separated platforms, e.g. linux/amd64,linux/arm64. For build-backend warp, each arch
+      runs on a separate Warp Docker Builder instance; the builder profile must enable every
+      requested arch in the Warp app (see Warp Docker Builders multi-platform docs).
     required: false
     default: linux/amd64
   build-backend:
@@ -57,8 +60,16 @@ inputs:
     required: false
     default: buildx
   profile-name:
-    description: Warp profile name (build-backend warp — required for org Warp projects)
+    description: >
+      Warp Docker Builders profile name(s), comma-separated fallback order (build-backend warp).
+      Required by Warpbuilds/build-push-action when building with Warp.
     required: false
+  warp-timeout-ms:
+    description: >
+      Milliseconds to wait for Warp Docker Builders to become ready (build-backend warp only).
+      Default 600000 per Warpbuilds/build-push-action.
+    required: false
+    default: '600000'
   push-by-digest:
     description: 'true | false (buildx only). true pushes canonical digest refs (for manifest merge flows).'
     required: false
@@ -225,3 +236,4 @@ runs:
         build-args: ${{ inputs.build-args }}
         platforms: ${{ inputs.platforms }}
         profile-name: ${{ inputs.profile-name }}
+        timeout: ${{ inputs.warp-timeout-ms }}
