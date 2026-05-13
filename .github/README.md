@@ -31,6 +31,7 @@ Callers’ jobs check out the **consumer** repository. A reusable workflow in **
 |-----------|----------------|-------------|
 | `secrets.*` in `action.yml` | **No** | `with:` from the caller (`password: ${{ secrets.x }}` — still masked) |
 | Reusable workflow | **Yes** | `on.workflow_call.secrets`, caller `secrets: inherit` or explicit map |
+| `docker-build-push` + `build-backend: warp` | **Optional** | `WARPBUILD_API_KEY` when the job `runs-on` is **not** a WarpBuild runner ([Docker Builders](https://www.warpbuild.com/docs/ci/docker-builders)) |
 
 `secrets: inherit` on **composite** actions is not supported; use a callable workflow if you want one secrets mapping.
 
@@ -67,20 +68,24 @@ jobs:
       build-backend: native
 ```
 
-**Callable** — Docker via Warp (no native digest merge):
+**Callable** — Docker via Warp ([Warpbuilds/build-push-action](https://github.com/WarpBuilds/build-push-action) + [Docker Builders](https://www.warpbuild.com/docs/ci/docker-builders); distinct from [cloud runner](https://www.warpbuild.com/docs/ci/cloud-runners) CPU — multi-arch uses per-arch builder VMs; enable both arches on the profile):
 
 ```yaml
 jobs:
   image:
     uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@v1.0.0
-    secrets: inherit
+    secrets: inherit # add WARPBUILD_API_KEY at org/repo if runs-on is not a WarpBuild runner
     with:
       auth-mode: ecr-oidc
       aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
       dockerfile: Dockerfile
       image: 123.dkr.ecr.us-east-1.amazonaws.com/myapp
       build-backend: warp
+      runs-on: warp-ubuntu-latest-x64-4x
+      platforms: linux/amd64,linux/arm64
       profile-name: my-warp-profile
+      # Optional: builder ready timeout ms (default 600000)
+      # warp-builder-timeout-ms: "900000"
 ```
 **Callable** — Helm to GHCR (`registry-login`; needs `packages: write` in the **called** job — workflow already sets it):
 

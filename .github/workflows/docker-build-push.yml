@@ -1,6 +1,11 @@
 # Callable reusable workflow — Docker build & push (FuelLabs/github-actions).
 # Pin: uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@<ref>
 #
+# build-backend warp: uses Warp Docker Builders (remote BuildKit), not the cloud runner's CPU
+# arch for image builds. Multi-platform needs a builder profile with both arches enabled; see
+# https://www.warpbuild.com/docs/ci/docker-builders#multi-platform-builds (distinct from cloud
+# runners: https://www.warpbuild.com/docs/ci/cloud-runners).
+#
 # Composites must use remote uses: (not ./) — the job workspace is the caller’s repo, so
 # actions/checkout is the caller, not this repo. The composite ref below must be a
 # **literal** (not env — env is not allowed in `uses:`). On release, set it to the same
@@ -13,15 +18,23 @@ on:
     inputs:
       runs-on:
         type: string
-        description: GitHub-hosted runner label for the job
+        description: >
+          Runner label for merge-only / plan jobs, and for the warp job. For build-backend warp,
+          a Warp x64 cloud runner (e.g. warp-ubuntu-latest-x64-4x) is normal — linux/arm64 images
+          are built on remote Docker Builder nodes when the profile supports it, not on this VM.
         default: ubuntu-latest
       platforms:
         type: string
-        description: Comma-separated platforms (e.g. linux/amd64,linux/arm64)
+        description: >
+          Comma-separated platforms (e.g. linux/amd64,linux/arm64). For build-backend warp,
+          enable amd64 and arm64 on the Warp Docker Builders profile or multi-arch builds will
+          mis-route / fail (see Warp Docker Builders multi-platform docs).
         default: linux/amd64
       build-backend:
         type: string
-        description: 'buildx | native | warp (buildx/native = native runner + digest merge path)'
+        description: >
+          buildx | native | warp. buildx/native: per-arch jobs on runs-on-amd64/arm64 then digest
+          merge. warp: Warpbuilds/build-push-action with Warp Docker Builders (remote builders).
         default: buildx
       auth-mode:
         type: string
@@ -74,8 +87,18 @@ on:
         required: false
       profile-name:
         type: string
-        description: Warp profile (required when build-backend is warp for Fuel projects)
+        description: >
+          Warp Docker Builders profile name(s), comma-separated fallback order (Warp action).
+          Required for build-backend warp. For linux/amd64,linux/arm64 the profile must have both
+          architectures enabled in the Warp app (Docker Builders), not just a cloud runner tag.
         required: false
+      warp-builder-timeout-ms:
+        type: string
+        description: >
+          Milliseconds to wait for Warp Docker Builders to become ready (build-backend warp only).
+          Default 600000 per Warp; increase if multi-arch assignment is slow.
+        required: false
+        default: '600000'
       digest-artifact-key:
         type: string
         description: >
@@ -90,6 +113,11 @@ on:
         required: false
       REGISTRY_PASSWORD:
         description: Password or PAT for registry-login
+        required: false
+      WARPBUILD_API_KEY:
+        description: >
+          Optional. WarpBuild API key for Docker Builders when runs-on is not a WarpBuild runner
+          (see https://www.warpbuild.com/docs/ci/docker-builders).
         required: false
     outputs:
       image:
@@ -348,6 +376,8 @@ jobs:
           fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
+  # Registry auth + tags/labels: Fuel composite (metadata-only). Image build/push: Warp shared
+  # action per https://www.warpbuild.com/docs/ci/docker-builders (not the in-repo composite).
   warp:
     if: ${{ inputs.build-backend == 'warp' }}
     runs-on: ${{ inputs.runs-on }}
@@ -356,14 +386,14 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.build.outputs.image }}
-      digest: ${{ steps.build.outputs.digest }}
-      metadata: ${{ steps.build.outputs.metadata }}
+      image: ${{ inputs.image }}
+      digest: ${{ steps.warp-push.outputs.digest }}
+      metadata: ${{ steps.docker-meta.outputs.metadata }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and push (Warp)
-        id: build
+      - name: Login and Docker metadata
+        id: docker-meta
         uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
         with:
           auth-mode: ${{ inputs.auth-mode }}
@@ -376,9 +406,22 @@ jobs:
           tags: ${{ inputs.tags }}
           flavor: ${{ inputs.flavor }}
           labels: ${{ inputs.labels }}
-          context: ${{ inputs.docker-context }}
           dockerfile: ${{ inputs.dockerfile }}
+          metadata-only: 'true'
+
+      - name: Build and push (Warp)
+        id: warp-push
+        uses: Warpbuilds/build-push-action@v6
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          labels: ${{ steps.docker-meta.outputs.labels }}
           build-args: ${{ inputs.build-args }}
           platforms: ${{ inputs.platforms }}
-          build-backend: warp
           profile-name: ${{ inputs.profile-name }}
+          timeout: ${{ inputs.warp-builder-timeout-ms }}
+          api-key: ${{ secrets.WARPBUILD_API_KEY }}
+          provenance: false
+          sbom: false
