@@ -50,9 +50,10 @@ inputs:
     required: false
   platforms:
     description: >
-      Comma-separated platforms, e.g. linux/amd64,linux/arm64. For build-backend warp, each arch
-      runs on a separate Warp Docker Builder instance; the builder profile must enable every
-      requested arch in the Warp app (see Warp Docker Builders multi-platform docs).
+      Comma-separated platforms, e.g. linux/amd64,linux/arm64. For build-backend warp, prefer
+      calling FuelLabs/github-actions/.github/workflows/docker-build-push.yml (comma triggers
+      per-arch digest + merge); this composite still passes `platforms` through to Warp in one
+      step unless the caller runs it once per platform.
     required: false
     default: linux/amd64
   build-backend:
