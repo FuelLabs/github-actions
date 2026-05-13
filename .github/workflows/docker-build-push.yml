@@ -1,10 +1,12 @@
 # Callable reusable workflow — Docker build & push (FuelLabs/github-actions).
 # Pin: uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@<ref>
 #
-# build-backend warp: uses Warp Docker Builders (remote BuildKit), not the cloud runner's CPU
-# arch for image builds. Multi-platform needs a builder profile with both arches enabled; see
-# https://www.warpbuild.com/docs/ci/docker-builders#multi-platform-builds (distinct from cloud
-# runners: https://www.warpbuild.com/docs/ci/cloud-runners).
+# build-backend warp: Warpbuilds/build-push-action with Warp Docker Builders (remote BuildKit).
+# If `platforms` contains a comma, this workflow runs one Warp build per architecture (digest
+# push) and merges with `imagetools` — avoids a single `--platform linux/amd64,linux/arm64`
+# invocation mis-scheduling arm64 `RUN` (exec format error). Single platform (no comma) uses
+# one tagged push. Enable requested arches on the Warp builder profile; see
+# https://www.warpbuild.com/docs/ci/docker-builders#multi-platform-builds
 #
 # Composites must use remote uses: (not ./) — the job workspace is the caller’s repo, so
 # actions/checkout is the caller, not this repo. The composite ref below must be a
@@ -27,14 +29,15 @@ on:
         type: string
         description: >
           Comma-separated platforms (e.g. linux/amd64,linux/arm64). For build-backend warp,
-          enable amd64 and arm64 on the Warp Docker Builders profile or multi-arch builds will
-          mis-route / fail (see Warp Docker Builders multi-platform docs).
+          a comma triggers per-arch digest builds plus manifest merge; the Warp profile must
+          allow every requested architecture (see Warp Docker Builders multi-platform docs).
         default: linux/amd64
       build-backend:
         type: string
         description: >
           buildx | native | warp. buildx/native: per-arch jobs on runs-on-amd64/arm64 then digest
-          merge. warp: Warpbuilds/build-push-action with Warp Docker Builders (remote builders).
+          merge. warp: Warpbuilds/build-push-action; comma in `platforms` runs per-arch digest builds
+          then imagetools merge (multi-arch), otherwise one tagged push.
         default: buildx
       auth-mode:
         type: string
@@ -122,13 +125,13 @@ on:
     outputs:
       image:
         description: Repository/image name without tag (inputs.image — stable across native-merge and Warp)
-        value: ${{ jobs.native-merge.outputs.image || jobs.warp.outputs.image }}
+        value: ${{ jobs.native-merge.outputs.image || jobs.warp-matrix-merge.outputs.image || jobs.warp-single.outputs.image }}
       digest:
         description: Image digest
-        value: ${{ jobs.native-merge.outputs.digest || jobs.warp.outputs.digest }}
+        value: ${{ jobs.native-merge.outputs.digest || jobs.warp-matrix-merge.outputs.digest || jobs.warp-single.outputs.digest }}
       metadata:
         description: docker/metadata-action bake JSON (stable schema across native-merge and Warp)
-        value: ${{ jobs.native-merge.outputs.metadata || jobs.warp.outputs.metadata }}
+        value: ${{ jobs.native-merge.outputs.metadata || jobs.warp-matrix-merge.outputs.metadata || jobs.warp-single.outputs.metadata }}
 
 jobs:
   native-plan:
@@ -376,10 +379,260 @@ jobs:
           fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
-  # Registry auth + tags/labels: Fuel composite (metadata-only). Image build/push: Warp shared
-  # action per https://www.warpbuild.com/docs/ci/docker-builders (not the in-repo composite).
-  warp:
-    if: ${{ inputs.build-backend == 'warp' }}
+  # Multi-platform Warp: one build invocation per platform (digest push), then manifest merge.
+  # A single `platforms: linux/amd64,linux/arm64` build can still exec-format on arm64 if the
+  # graph is scheduled on the wrong remote node; splitting matches Warp's "separate builder
+  # per arch" model (https://www.warpbuild.com/docs/ci/docker-builders#multi-platform-builds).
+  warp-multi-plan:
+    if: ${{ inputs.build-backend == 'warp' && contains(inputs.platforms, ',') }}
+    runs-on: ${{ inputs.runs-on }}
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      digest_artifact_key: ${{ steps.artifact-key.outputs.digest_artifact_key }}
+    steps:
+      - name: Build Warp matrix from requested platforms
+        id: plan
+        shell: bash
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          raw = os.environ.get("PLATFORMS", "")
+          allowed = {"linux/amd64", "linux/arm64"}
+
+          requested = [p.strip() for p in raw.split(",") if p.strip()]
+          if not requested:
+              raise SystemExit("platforms input must contain at least one platform")
+
+          include = []
+          seen = set()
+          invalid = []
+          for p in requested:
+              if p not in allowed:
+                  invalid.append(p)
+                  continue
+              if p in seen:
+                  continue
+              seen.add(p)
+              include.append({"platform": p})
+
+          if invalid:
+              raise SystemExit(
+                  "Unsupported platform(s): "
+                  + ", ".join(invalid)
+                  + ". Allowed: linux/amd64, linux/arm64"
+              )
+          if not include:
+              raise SystemExit("No valid platforms to build")
+
+          print(f"matrix={json.dumps({'include': include}, separators=(',', ':'))}")
+          PY
+
+      - name: Digest artifact key
+        id: artifact-key
+        shell: bash
+        env:
+          EXPLICIT: ${{ inputs.digest-artifact-key }}
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          if [ -n "${EXPLICIT}" ]; then
+            key="${EXPLICIT}"
+            key="${key//[^a-zA-Z0-9._-]/-}"
+            key="${key:0:120}"
+          else
+            key=$(printf '%s' "$IMAGE" | sha256sum | awk '{print substr($1,1,16)}')
+          fi
+          printf '%s\n' "digest_artifact_key=$key" >> "$GITHUB_OUTPUT"
+
+  warp-multi-build:
+    if: ${{ inputs.build-backend == 'warp' && contains(inputs.platforms, ',') }}
+    needs: warp-multi-plan
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.warp-multi-plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive platform pair
+        id: platform
+        shell: bash
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          platform="${MATRIX_PLATFORM}"
+          echo "pair=${platform//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Login and Docker metadata
+        id: docker-meta
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          dockerfile: ${{ inputs.dockerfile }}
+          metadata-only: 'true'
+
+      - name: Build and push by digest (Warp)
+        id: warp-push
+        uses: Warpbuilds/build-push-action@v6
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.dockerfile }}
+          outputs: type=image,name=${{ inputs.image }},push-by-digest=true,name-canonical=true,push=true
+          labels: ${{ steps.docker-meta.outputs.labels }}
+          build-args: ${{ inputs.build-args }}
+          platforms: ${{ matrix.platform }}
+          profile-name: ${{ inputs.profile-name }}
+          timeout: ${{ inputs.warp-builder-timeout-ms }}
+          api-key: ${{ secrets.WARPBUILD_API_KEY }}
+          provenance: false
+          sbom: false
+
+      - name: Export digest
+        shell: bash
+        env:
+          BUILD_DIGEST: ${{ steps.warp-push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/digests
+          digest="${BUILD_DIGEST}"
+          digest="${digest#sha256:}"
+          digest="${digest//[[:space:]]/}"
+          if [[ ! "$digest" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "Invalid digest from Warp build (expected 64 hex chars): ${BUILD_DIGEST}" >&2
+            exit 1
+          fi
+          touch "/tmp/digests/${digest,,}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ steps.platform.outputs.pair }}-${{ needs.warp-multi-plan.outputs.digest_artifact_key }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  warp-multi-merge:
+    if: ${{ inputs.build-backend == 'warp' && contains(inputs.platforms, ',') }}
+    needs:
+      - warp-multi-plan
+      - warp-multi-build
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.inspect.outputs.digest }}
+      metadata: ${{ steps.meta.outputs.metadata }}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*-${{ needs.warp-multi-plan.outputs.digest_artifact_key }}
+          merge-multiple: true
+
+      - name: Login and metadata only (reuse composite)
+        uses: FuelLabs/github-actions/.github/actions/docker-build-push@master
+        id: meta
+        with:
+          auth-mode: ${{ inputs.auth-mode }}
+          aws-role-arn: ${{ inputs.aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          image: ${{ inputs.image }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          labels: ${{ inputs.labels }}
+          dockerfile: ${{ inputs.dockerfile }}
+          metadata-only: 'true'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+          METADATA_JSON: ${{ steps.meta.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          manifests=()
+          declare -A seen=()
+          while IFS= read -r -d '' f; do
+            d="$(basename "$f")"
+            d="${d,,}"
+            [[ "$d" =~ ^[0-9a-f]{64}$ ]] || continue
+            [[ -n "${seen[$d]:-}" ]] && continue
+            seen[$d]=1
+            manifests+=("${IMAGE_REF}@sha256:${d}")
+          done < <(find . -type f -print0)
+          if [ "${#manifests[@]}" -eq 0 ]; then
+            echo "No valid sha256 digest marker files under $(pwd)" >&2
+            find . -ls >&2 || true
+            exit 1
+          fi
+          set -f
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$METADATA_JSON") \
+            "${manifests[@]}"
+
+      - name: Set image output
+        id: image
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "image=$IMAGE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect pushed manifest digest
+        id: inspect
+        shell: bash
+        env:
+          IMAGE_REF: ${{ inputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERSION}" ]; then
+            echo "Empty metadata version; cannot inspect merged manifest" >&2
+            exit 1
+          fi
+          digest="$(
+            docker buildx imagetools inspect "${IMAGE_REF}:${VERSION}" --format '{{json .Manifest}}' \
+              | jq -r '.digest // empty'
+          )"
+          if [ -z "${digest}" ]; then
+            echo "Could not read manifest digest for ${IMAGE_REF}:${VERSION}" >&2
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+  # Single-platform Warp (no comma in `platforms`): one Warp build-push with tags.
+  warp-single:
+    if: ${{ inputs.build-backend == 'warp' && !contains(inputs.platforms, ',') }}
     runs-on: ${{ inputs.runs-on }}
     permissions:
       id-token: write
