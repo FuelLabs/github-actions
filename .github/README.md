@@ -54,7 +54,7 @@ jobs:
       runs-on-arm64: ubuntu-24.04-arm
 ```
 
-**Callable** — Docker with private submodules (`vars.APP_ID` + `secrets.APP_KEY` on the **caller** repo):
+**Callable** — Docker with private submodules (set `vars.APP_ID` + `secrets.APP_KEY` on the **caller** repo; the reusable workflow passes `vars.APP_ID` into the checkout composite):
 
 ```yaml
 jobs:

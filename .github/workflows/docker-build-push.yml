@@ -113,7 +113,7 @@ on:
       checkout-submodules:
         type: boolean
         description: >
-          Checkout private git submodules before build (GitHub App: caller vars.APP_ID + secrets.APP_KEY).
+          Checkout private git submodules before build (GitHub App: caller repo vars.APP_ID + secrets.APP_KEY).
         default: false
       checkout-app-repositories:
         type: string
@@ -240,6 +240,7 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
         with:
           submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
           app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Derive platform pair
@@ -488,6 +489,7 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
         with:
           submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
           app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Derive platform pair
@@ -676,6 +678,7 @@ jobs:
           APP_KEY: ${{ secrets.APP_KEY }}
         with:
           submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
           app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Login and Docker metadata
