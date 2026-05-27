@@ -110,6 +110,18 @@ on:
           If empty, a 16-char hash of inputs.image is used.
         required: false
         default: ''
+      checkout-submodules:
+        type: boolean
+        description: >
+          Checkout private git submodules before build (GitHub App: caller repo vars.APP_ID + secrets.APP_KEY).
+        default: false
+      checkout-app-repositories:
+        type: string
+        description: >
+          Multiline repo names for create-github-app-token (include caller + submodule repos).
+          Required when checkout-submodules is true.
+        required: false
+        default: ''
     secrets:
       REGISTRY_USERNAME:
         description: Username for registry-login (omit for pure ECR OIDC)
@@ -121,6 +133,9 @@ on:
         description: >
           Optional. WarpBuild API key for Docker Builders when runs-on is not a WarpBuild runner
           (see https://www.warpbuild.com/docs/ci/docker-builders).
+        required: false
+      APP_KEY:
+        description: GitHub App private key (required when checkout-submodules is true)
         required: false
     outputs:
       image:
@@ -219,7 +234,14 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.native-plan.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: FuelLabs/github-actions/.github/actions/checkout-repo@master
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
+          app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Derive platform pair
         id: platform
@@ -461,7 +483,14 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.warp-multi-plan.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: FuelLabs/github-actions/.github/actions/checkout-repo@master
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
+          app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Derive platform pair
         id: platform
@@ -643,7 +672,14 @@ jobs:
       digest: ${{ steps.warp-push.outputs.digest }}
       metadata: ${{ steps.docker-meta.outputs.metadata }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: FuelLabs/github-actions/.github/actions/checkout-repo@master
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'true' || 'false' }}
+          app-id: ${{ vars.APP_ID }}
+          app-repositories: ${{ inputs.checkout-app-repositories }}
 
       - name: Login and Docker metadata
         id: docker-meta

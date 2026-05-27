@@ -8,6 +8,7 @@ This file documents the **OCI / Docker / Helm** composites and their callable wo
 
 | Kind | Path | Purpose |
 |------|------|---------|
+| Composite | `.github/actions/checkout-repo` | Caller checkout with optional private **recursive submodules** (GitHub App) |
 | Composite | `.github/actions/docker-build-push` | ECR private/public OIDC or registry login; **Buildx** + QEMU, or **Warp** |
 | Composite | `.github/actions/helm-publish-oci` | Non-PR Helm **OCI** publish (lint, push) via registry token or AWS OIDC (ECR) |
 | Composite | `.github/actions/slack-notify-failure` | Small Slack failure step (`ravsamhq/notify-slack-action`) |
@@ -51,6 +52,26 @@ jobs:
       build-backend: native
       runs-on-amd64: ubuntu-latest
       runs-on-arm64: ubuntu-24.04-arm
+```
+
+**Callable** — Docker with private submodules (set `vars.APP_ID` + `secrets.APP_KEY` on the **caller** repo; the reusable workflow passes `vars.APP_ID` into the checkout composite):
+
+```yaml
+jobs:
+  image:
+    uses: FuelLabs/github-actions/.github/workflows/docker-build-push.yml@v1.0.0
+    secrets: inherit
+    with:
+      auth-mode: ecr-oidc
+      aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+      dockerfile: Dockerfile
+      image: 123.dkr.ecr.us-east-1.amazonaws.com/myapp-service
+      build-backend: native
+      checkout-submodules: true
+      checkout-app-repositories: |
+        fuel-o2
+        my-app
+        my-submodule-repo
 ```
 
 **Callable** — Docker to ECR Public (OIDC):
