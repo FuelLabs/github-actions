@@ -53,6 +53,8 @@ jobs:
       runs-on-arm64: ubuntu-24.04-arm
 ```
 
+**Private submodules** — pass `checkout-submodules: true` and a multiline `checkout-app-repositories` list; caller must set `vars.APP_ID`, `secrets.APP_KEY`, and `secrets: inherit`. Optional `checkout-lfs: true` runs `git lfs pull` after checkout.
+
 **Callable** — Docker to ECR Public (OIDC):
 
 ```yaml

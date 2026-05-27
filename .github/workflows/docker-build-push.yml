@@ -110,6 +110,22 @@ on:
           If empty, a 16-char hash of inputs.image is used.
         required: false
         default: ''
+      checkout-submodules:
+        type: boolean
+        description: >
+          Fetch git submodules recursively before build. Use with checkout-app-repositories when
+          submodules are private (caller needs vars.APP_ID and secrets.APP_KEY; use secrets inherit).
+        default: false
+      checkout-app-repositories:
+        type: string
+        description: >
+          Multiline FuelLabs repository names for actions/create-github-app-token before checkout.
+          Empty string skips the app token step (default GITHUB_TOKEN checkout only).
+        default: ''
+      checkout-lfs:
+        type: boolean
+        description: Run git lfs install and git lfs pull after checkout.
+        default: false
     secrets:
       REGISTRY_USERNAME:
         description: Username for registry-login (omit for pure ECR OIDC)
@@ -219,7 +235,25 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.native-plan.outputs.matrix) }}
     steps:
+      - uses: actions/create-github-app-token@v2
+        if: ${{ inputs.checkout-app-repositories != '' }}
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ inputs.checkout-app-repositories }}
+
       - uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'recursive' || 'false' }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Fetch Git LFS objects
+        if: ${{ inputs.checkout-lfs }}
+        run: |
+          git lfs install
+          git lfs pull
 
       - name: Derive platform pair
         id: platform
@@ -461,7 +495,25 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.warp-multi-plan.outputs.matrix) }}
     steps:
+      - uses: actions/create-github-app-token@v2
+        if: ${{ inputs.checkout-app-repositories != '' }}
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ inputs.checkout-app-repositories }}
+
       - uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'recursive' || 'false' }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Fetch Git LFS objects
+        if: ${{ inputs.checkout-lfs }}
+        run: |
+          git lfs install
+          git lfs pull
 
       - name: Derive platform pair
         id: platform
@@ -643,7 +695,25 @@ jobs:
       digest: ${{ steps.warp-push.outputs.digest }}
       metadata: ${{ steps.docker-meta.outputs.metadata }}
     steps:
+      - uses: actions/create-github-app-token@v2
+        if: ${{ inputs.checkout-app-repositories != '' }}
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ inputs.checkout-app-repositories }}
+
       - uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout-submodules && 'recursive' || 'false' }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
+
+      - name: Fetch Git LFS objects
+        if: ${{ inputs.checkout-lfs }}
+        run: |
+          git lfs install
+          git lfs pull
 
       - name: Login and Docker metadata
         id: docker-meta
